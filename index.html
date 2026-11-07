@@ -1,0 +1,1115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Compass Constructions in CGA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/ganja.js@1.0.204/ganja.js"></script>
+<style>
+  /* Layout: one reading column (~66ch) with demo figures that widen to the
+     viewport; construction orange marks the current step, rotor blue the
+     stepping, as in the demos themselves. */
+  :root {
+    --paper: #f6f7f9;
+    --ink: #17202e;
+    --muted: #586374;
+    --rule: #d8dde5;
+    --panel: #ffffff;
+    --construct: #b95600;
+    --rotor: #2462b8;
+    --caution: #8a5a00;
+    --caution-bg: #fbf3e2;
+    --display: "IBM Plex Sans Condensed", "Arial Narrow", system-ui, sans-serif;
+    --body: "Source Serif 4", "Iowan Old Style", Georgia, serif;
+    --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #12161d; --ink: #e4e8ee; --muted: #9aa5b5; --rule: #2c3442; --panel: #1a2029;
+      --construct: #f0a050; --rotor: #7fb0f0; --caution: #e8c070; --caution-bg: #2a2416;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #12161d; --ink: #e4e8ee; --muted: #9aa5b5; --rule: #2c3442; --panel: #1a2029;
+    --construct: #f0a050; --rotor: #7fb0f0; --caution: #e8c070; --caution-bg: #2a2416;
+    color-scheme: dark;
+  }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--body);
+    font-size: 1.0625rem;
+    line-height: 1.6;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-block: 2.5rem 4rem;
+  }
+
+  .col { max-width: 66ch; margin-inline: auto; }
+  .wide { max-width: 1180px; margin-inline: auto; }
+
+  h1, h2, h3 {
+    font-family: var(--display);
+    font-weight: 600;
+    line-height: 1.15;
+    text-wrap: balance;
+    letter-spacing: 0.005em;
+  }
+  h1 { font-size: clamp(2rem, 1.4rem + 2.6vw, 3.1rem); margin: 0.2rem 0 1rem; }
+  h2 { font-size: 1.75rem; margin: 3.5rem 0 0.75rem; padding-top: 1.25rem; border-top: 1px solid var(--rule); }
+  h3 { font-size: 1.2rem; margin: 2rem 0 0.5rem; }
+  h2 .no { color: var(--construct); margin-right: 0.4em; }
+
+  .eyebrow {
+    font-family: var(--display);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+  .lede { font-size: 1.2rem; color: var(--ink); }
+  .byline {
+    font-family: var(--display);
+    font-size: 0.98rem;
+    color: var(--muted);
+    margin: -0.4rem 0 1.2rem;
+  }
+  p, li { hyphens: manual; }  /* no automatic word splitting */
+  a { color: var(--rotor); }
+  a:focus-visible, button:focus-visible { outline: 2px solid var(--construct); outline-offset: 2px; }
+  code {
+    font-family: var(--mono);
+    font-size: 0.86em;
+    background: var(--panel);
+    border: 1px solid var(--rule);
+    padding: 0.05em 0.3em;
+    border-radius: 3px;
+  }
+
+  nav.toc {
+    margin: 2rem 0 0;
+    font-family: var(--display);
+    font-size: 0.98rem;
+  }
+  nav.toc ol { margin: 0.4rem 0 0; padding-left: 1.4rem; columns: 2 18rem; column-gap: 2rem; }
+  nav.toc li { break-inside: avoid; margin: 0.15rem 0; }
+
+  .md { overflow-x: auto; overflow-y: hidden; padding: 0.35rem 0; }
+  .katex { font-size: 1.04em; }
+  /* Keep each inline formula on one line: a formula that does not fit moves
+     to the next line whole. Only on very narrow screens may it break, so the
+     page never scrolls sideways. */
+  .m .katex { white-space: nowrap; }
+  @media (max-width: 480px) { .m .katex { white-space: normal; } }
+
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 0.95rem;
+    font-variant-numeric: tabular-nums;
+  }
+  .table-wrap { overflow-x: auto; margin: 1rem 0; }
+  th, td { text-align: left; vertical-align: top; padding: 0.45rem 0.6rem; border-bottom: 1px solid var(--rule); }
+  th { font-family: var(--display); font-weight: 600; font-size: 0.9rem; color: var(--muted); }
+
+  dl.dict { display: grid; grid-template-columns: minmax(9rem, 13rem) minmax(0, 1fr); gap: 0.4rem 1.2rem; margin: 1rem 0; }
+  dl.dict dt { font-family: var(--display); font-weight: 600; padding-top: 0.15rem; }
+  dl.dict dd { margin: 0; min-width: 0; }
+  @media (max-width: 560px) { dl.dict { grid-template-columns: minmax(0, 1fr); } dl.dict dd { margin-bottom: 0.6rem; } }
+
+  blockquote.quote {
+    margin: 1.4rem 0;
+    padding: 0.9rem 1.1rem;
+    border-left: 3px solid var(--rotor);
+    background: var(--panel);
+  }
+  blockquote.quote p { margin: 0; }
+
+  .unverified {
+    border: 1px solid var(--caution);
+    background: var(--caution-bg);
+    color: var(--ink);
+    padding: 0.8rem 1rem;
+    border-radius: 4px;
+    margin: 1rem 0;
+  }
+  .unverified strong { color: var(--caution); font-family: var(--display); letter-spacing: 0.03em; }
+
+  aside.note {
+    font-size: 0.95rem;
+    color: var(--muted);
+    border-top: 1px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
+    padding: 0.6rem 0;
+    margin: 1.4rem 0;
+  }
+
+  figure.demo { margin: 2rem auto; }
+  figure.demo .frame {
+    border: 1px solid var(--rule);
+    background: var(--panel);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  figure.demo iframe {
+    display: block;
+    width: 100%;
+    height: clamp(460px, 78vh, 760px);
+    border: 0;
+  }
+  figure.demo figcaption {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 0.4rem 1rem;
+    font-family: var(--display);
+    font-size: 0.92rem;
+    color: var(--muted);
+    margin-top: 0.5rem;
+  }
+  figure.demo figcaption b { color: var(--ink); font-weight: 600; }
+
+  button.expand, button.close {
+    font-family: var(--display);
+    font-size: 0.92rem;
+    color: var(--rotor);
+    background: var(--panel);
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    padding: 0.2rem 0.7rem;
+    cursor: pointer;
+    align-self: flex-start;
+  }
+  button.expand:hover, button.close:hover { border-color: var(--rotor); }
+  figure.demo figcaption .actions { display: flex; gap: 0.8rem; align-items: center; white-space: nowrap; }
+
+  /* Full screen: the browser's fullscreen, or (where that is refused) an
+     overlay filling the window. */
+  figure.demo .frame { position: relative; }
+  figure.demo .frame:fullscreen iframe { height: 100%; }
+  figure.demo .frame.expanded {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    border: 0;
+    border-radius: 0;
+    padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+    background: var(--paper);
+  }
+  figure.demo .frame.expanded iframe { height: 100%; }
+  figure.demo .frame button.close {
+    position: absolute;
+    right: calc(10px + env(safe-area-inset-right, 0px));
+    bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+    z-index: 2;
+  }
+  .swatch { display: inline-block; width: 0.8em; height: 0.8em; border-radius: 2px; vertical-align: -0.05em; margin-right: 0.25em; }
+
+  figure.widget { margin-block: 1.2rem 1.8rem; }
+  figure.widget .wframe {
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    overflow: hidden;
+    background: var(--panel);
+    touch-action: none;
+  }
+  figure.widget figcaption {
+    font-family: var(--display);
+    font-size: 0.92rem;
+    color: var(--muted);
+    margin-top: 0.5rem;
+  }
+  figure.widget figcaption b { color: var(--ink); font-weight: 600; }
+  output.readout {
+    display: block;
+    margin-top: 0.35rem;
+    font-family: var(--mono);
+    font-size: 0.85rem;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+  }
+  section.primer-cont h3:first-child { margin-top: 1.2rem; }
+
+  aside.legend-box {
+    margin-block: 2rem 1rem;
+    padding: 0.4rem 1.1rem 0.6rem;
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    background: var(--panel);
+  }
+  aside.legend-box h3 { margin-top: 0.6rem; }
+
+  nav.toc .toc-extra { margin: 0.3rem 0 0 1.4rem; }
+  ol.refs { padding-left: 1.4rem; font-size: 0.95rem; }
+  ol.refs li { margin: 0.5rem 0; }
+  ol.refs li:target { background: var(--caution-bg); }
+  a.cite { white-space: nowrap; }
+
+  footer { margin-top: 4rem; color: var(--muted); font-size: 0.92rem; }
+
+  @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style>
+</head>
+<body>
+
+<header class="col">
+  <div class="eyebrow">Conformal geometric algebra · ganja.js</div>
+  <h1>Compass constructions in conformal geometric algebra</h1>
+  <p class="byline">Ian Cavén, with Claude Opus 5.5 · <time datetime="2026-11-07">2026-11-07</time></p>
+  <p class="lede">
+    Every classical construction step has a direct CGA form: a straightedge is a join with
+    <span class="m">n_\infty</span>, a compass is a dual sphere whose radius is carried by an inner
+    product, and an intersection is a meet that returns a point pair. This page collects how far
+    that goes: regular polygons by Carlyle circles in CGA2D, circles as cuts of lifted spheres in
+    CGA3D, the icosahedron, and what can and cannot be reached.
+  </p>
+  <p>
+    Every construction starts from two given points, <span class="m">O</span> and
+    <span class="m">V_0</span>. Euclidean coordinates are read only to pick one point of an
+    intersection pair. The four demos are live ganja.js pages; each step lists the CGA operations
+    it actually ran, recorded by the construction helpers.
+  </p>
+  <p>
+    New to geometric algebra? <a href="#primer">Section 1</a> introduces what the rest of the page uses, assuming only
+    vectors and the dot product, with small figures to drag.
+  </p>
+  <nav class="toc" aria-label="Contents">
+    <div class="eyebrow">Contents</div>
+    <ol>
+      <li><a href="#primer">Geometric algebra in brief</a></li>
+      <li><a href="#dictionary">The CGA dictionary</a></li>
+      <li><a href="#polygons">Regular polygons by Carlyle circles</a></li>
+      <li><a href="#lifting">Lifting spheres in CGA3D</a></li>
+      <li><a href="#solids">Platonic solids</a></li>
+      <li><a href="#theory">What can be constructed</a></li>
+      <li><a href="#parabola">Beyond square roots: a parabola</a></li>
+      <li><a href="#open">Open directions</a></li>
+    </ol>
+    <p class="toc-extra"><a href="#references">References</a> · <a href="#further-reading">Further reading</a></p>
+  </nav>
+</header>
+
+<main>
+<section class="col" id="primer">
+  <h2><span class="no">1</span>Geometric algebra in brief</h2>
+  <p>
+    This section is for readers who know vectors and the dot product but have not met geometric algebra (GA).
+    It builds up just enough to read the rest of the page: one new product, reflections and rotations as
+    "sandwiches", and the conformal model in which points, circles and lines all become vectors. If GA is
+    familiar, skip to <a href="#dictionary">section 2</a>.
+  </p>
+
+  <h3>One product for vectors</h3>
+  <p>For two vectors <span class="m">a</span> and <span class="m">b</span>, the <em>geometric product</em> is</p>
+  <div class="md">ab = a\cdot b + a\wedge b .</div>
+  <p>
+    The first part is the familiar dot product, a number. The second, the <em>outer</em> or <em>wedge</em> product, is a
+    new kind of object, a <em>bivector</em>: the oriented parallelogram spanned by <span class="m">a</span> and
+    <span class="m">b</span>, with area <span class="m">\lvert a\rvert\lvert b\rvert\sin\theta</span>. It is antisymmetric,
+    <span class="m">a\wedge b = -\,b\wedge a</span>, so <span class="m">a\wedge a = 0</span>.
+  </p>
+  <p>
+    With orthonormal basis vectors <span class="m">e_1, e_2</span>: <span class="m">e_1e_1 = 1</span>, and
+    <span class="m">e_1e_2 = e_1\wedge e_2 = -\,e_2e_1</span>, written <span class="m">e_{12}</span>. Objects of different
+    <em>grade</em> (scalars are grade 0, vectors 1, bivectors 2, and so on) are added side by side, the way a complex
+    number adds a real and an imaginary part. The wedge of <span class="m">k</span> vectors is a <em>k-blade</em>; it stands
+    for a <span class="m">k</span>-dimensional subspace with an orientation and a size. One identity explains why rotations
+    will appear: <span class="m">e_{12}^2 = e_1e_2e_1e_2 = -\,e_1e_1e_2e_2 = -1</span>.
+  </p>
+
+  <h3>Reflections and rotors</h3>
+  <p>
+    For a unit vector <span class="m">n</span>, the "sandwich" <span class="m">x \mapsto -\,n\,x\,n</span> reflects
+    <span class="m">x</span> in the line (or plane) perpendicular to <span class="m">n</span>. Reflect in
+    <span class="m">a</span>, then in <span class="m">b</span>:
+  </p>
+  <div class="md">x \;\mapsto\; b\,a\,x\,a\,b = R\,x\,\tilde R, \qquad R = ba,\quad \tilde R = ab .</div>
+  <p>
+    Two reflections make a rotation by <em>twice</em> the angle from <span class="m">a</span> to <span class="m">b</span>.
+    <span class="m">R</span> is a <em>rotor</em> and <span class="m">\tilde R</span>, its <em>reverse</em>, is
+    <span class="m">R</span> with the order of factors reversed; for a rotation by <span class="m">\theta</span>,
+    <span class="m">R = \cos\tfrac\theta2 - \sin\tfrac\theta2\, e_{12}</span>. The same sandwich rotates any object, not just
+    vectors. The polygon pages build their rotor exactly this way: <span class="m">R = (V_0 - V_1)\,L_x^{*}</span> is a reflection
+    in the line <span class="m">OV_0</span> followed by one in the bisector of <span class="m">V_0V_1</span>.
+  </p>
+</section>
+
+<figure class="widget col" id="figure-1" aria-label="Interactive figure: two reflections make a rotation">
+  <div class="wframe" id="w-reflect"></div>
+  <figcaption>
+    <b>Figure 1.</b> Drag <i>a</i> and <i>b</i> to set two lines through O, and drag X. Reflecting X in line <i>a</i> gives X′,
+    then in line <i>b</i> gives X″, which is the rotor sandwich R X R̃ with R = <i>ba</i>.
+    <output id="w-reflect-out" class="readout"></output>
+  </figcaption>
+</figure>
+
+<section class="col primer-cont">
+  <h3>Duality</h3>
+  <p>
+    The same subspace can be described in two ways: by the vectors that span it (an outer product), or by what is
+    perpendicular to it (an inner product). Multiplying by the <em>pseudoscalar</em>, the unit blade of highest grade,
+    converts one description into the other; this is the <em>dual</em>, written <span class="m">X^{*}</span> (and
+    <code>!X</code> in ganja.js). In the plane, the dual of a line's direction is its normal.
+  </p>
+
+  <h3>The conformal model: two extra dimensions</h3>
+  <p>
+    Plain vectors describe directions through an origin. Points elsewhere, translations and circles are not subspaces,
+    so on their own they are awkward. Conformal geometric algebra (CGA; see <a class="cite" href="#ref-dorst">Dorst, Fontijne and Mann 2007</a> for a full treatment) adds two basis vectors,
+    <span class="m">e_+</span> with <span class="m">e_+^2 = 1</span> and <span class="m">e_-</span> with
+    <span class="m">e_-^2 = -1</span>, and combines them into two <em>null</em> vectors:
+  </p>
+  <div class="md">n_\infty = e_- + e_+,\qquad n_o = \tfrac12(e_- - e_+),\qquad n_\infty^2 = n_o^2 = 0,\qquad n_o\cdot n_\infty = -1 .</div>
+  <p>
+    <span class="m">n_o</span> stands for the origin and <span class="m">n_\infty</span> for the point at infinity. A
+    Euclidean point <span class="m">x</span> becomes the vector
+  </p>
+  <div class="md">P = n_o + x + \tfrac12 x^2\, n_\infty, \qquad P\cdot P = 0, \qquad P\cdot Q = -\tfrac12\,\lvert p - q\rvert^2 .</div>
+  <p>
+    The last identity is the heart of everything on this page: a squared distance is now an inner product, a linear
+    operation. That is why compass constructions turn into algebra.
+  </p>
+</section>
+
+<figure class="widget col" id="figure-2" aria-label="Interactive figure: distance as an inner product">
+  <div class="wframe" id="w-distance"></div>
+  <figcaption>
+    <b>Figure 2.</b> Drag A and B. The readout compares −2 A·B with |AB|² from the coordinates; the orange circle is centred
+    at A with the radius taken from the inner product, <span class="m">\big(A + (A\cdot B)\,n_\infty\big)^{*}</span>.
+    <output id="w-distance-out" class="readout"></output>
+  </figcaption>
+</figure>
+
+<section class="col primer-cont">
+  <h3>Circles and lines are vectors too</h3>
+  <p>
+    Since <span class="m">X\cdot C = -\tfrac12\lvert x - c\rvert^2</span>, the vector
+    <span class="m">s = C - \tfrac12 r^2 n_\infty</span> satisfies <span class="m">X\cdot s = 0</span> exactly for the points
+    at distance <span class="m">r</span> from <span class="m">C</span>: it <em>is</em> the circle. A line with unit normal
+    <span class="m">n</span> at distance <span class="m">d</span> from the origin is <span class="m">n + d\,n_\infty</span>, a
+    circle of infinite radius. Dually, by what spans them:
+  </p>
+  <div class="md">\text{circle through } A, B, C:\ A\wedge B\wedge C, \qquad \text{line through } A, B:\ A\wedge B\wedge n_\infty .</div>
+  <p>A line is a circle through infinity. Translations and scalings also become sandwiches with versors built from <span class="m">n_\infty</span>, so one product covers all the Euclidean motions.</p>
+
+  <h3>Join and meet</h3>
+  <p>
+    The outer product <em>joins</em>: <span class="m">A\wedge B\wedge C</span> is the smallest circle containing the three
+    points. The <em>meet</em> <span class="m">X\vee Y</span> (<code>&amp;</code> in ganja.js) intersects. Two circles, or a
+    circle and a line, meet in a <em>point pair</em> <span class="m">T</span>, a single object holding both intersection
+    points, which section 2 splits into the two points. If the objects do not meet, the pair is <em>imaginary</em>, which
+    shows as <span class="m">T\cdot T &lt; 0</span>.
+  </p>
+</section>
+
+<figure class="widget col" id="figure-3" aria-label="Interactive figure: join and meet">
+  <div class="wframe" id="w-meet"></div>
+  <figcaption>
+    <b>Figure 3.</b> Drag A, B, C (the circle <span class="m">A\wedge B\wedge C</span>) and D, E (the line
+    <span class="m">D\wedge E\wedge n_\infty</span>). Their meet is the point pair in purple; pull the line off the circle to
+    see the pair become imaginary.
+    <output id="w-meet-out" class="readout"></output>
+  </figcaption>
+</figure>
+
+<section class="col primer-cont">
+  <h3>Reading the rest of the page</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Symbol</th><th>Meaning</th><th>ganja.js</th></tr></thead>
+      <tbody>
+        <tr><td><span class="m">A\wedge B</span></td><td>join (outer product)</td><td><code>A ^ B</code></td></tr>
+        <tr><td><span class="m">X\vee Y</span></td><td>meet (intersection)</td><td><code>X &amp; Y</code></td></tr>
+        <tr><td><span class="m">A\cdot B</span></td><td>inner product</td><td><code>A | B</code></td></tr>
+        <tr><td><span class="m">X^{*}</span></td><td>dual</td><td><code>!X</code></td></tr>
+        <tr><td><span class="m">\tilde R</span></td><td>reverse</td><td><code>~R</code></td></tr>
+        <tr><td><span class="m">R\,X\,\tilde R</span></td><td>apply a rotor or versor</td><td><code>R &gt;&gt;&gt; X</code></td></tr>
+        <tr><td><span class="m">n_o,\ n_\infty</span></td><td>origin, point at infinity</td><td><code>0.5*(1e4 - 1e3)</code>, <code>1e4 + 1e3</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="col" id="dictionary">
+  <h2><span class="no">2</span>The CGA dictionary</h2>
+  <p>
+    In the plane (<span class="m">\mathbb{R}^{3,1}</span>, with
+    <span class="m">n_\infty = e_4 + e_3</span> and <span class="m">n_o = \tfrac12(e_4 - e_3)</span>
+    in ganja's convention), a point is
+  </p>
+  <div class="md">P(x) = n_o + x + \tfrac12 x^2 n_\infty, \qquad -P\cdot n_\infty = 1, \qquad P\cdot Q = -\tfrac12\,\lvert p - q\rvert^2 .</div>
+  <p>
+    The last identity is what makes compass work algebraic: a squared distance between two points
+    is an inner product, so a length can be transferred without ever being measured.
+  </p>
+  <dl class="dict">
+    <dt>Straightedge</dt>
+    <dd><span class="m">L_{AB} = A \wedge B \wedge n_\infty</span></dd>
+    <dt>Compass</dt>
+    <dd>
+      The circle centred at <span class="m">C</span> with radius <span class="m">\lvert P_1P_2\rvert</span>
+      is <span class="m">\big(C + (P_1\cdot P_2)\,n_\infty\big)^{*}</span>, since its dual is
+      <span class="m">C - \tfrac12 r^2 n_\infty</span>. With <span class="m">P_1 = C</span> it is the
+      circle through <span class="m">P_2</span>.
+    </dd>
+    <dt>Intersection</dt>
+    <dd>
+      The meet <span class="m">T = X \vee Y</span> of two lines or circles is a point pair, split by
+      <span class="m">P_\pm = \big(T \pm \sqrt{T\cdot T}\big)\,(n_\infty \rfloor T)</span>;
+      <span class="m">T\cdot T &lt; 0</span> means the objects do not meet.
+    </dd>
+    <dt>Bisection</dt>
+    <dd>
+      Classically, with two circles: <span class="m">T_{AB} = C_A(B) \vee C_B(A)</span>, bisector
+      <span class="m">B_{AB} = T_{AB} \wedge n_\infty</span>, midpoint
+      <span class="m">M = \operatorname{pt}(B_{AB} \vee L_{AB})</span>.
+    </dd>
+    <dt>Flat point to point</dt>
+    <dd>
+      Two lines meet in <span class="m">F = M \wedge n_\infty</span>. With
+      <span class="m">Y = n_o \rfloor F</span> normalized,
+      <span class="m">M = Y + \tfrac12 (Y\cdot Y)\, n_\infty</span>.
+    </dd>
+    <dt>Centre of a circle</dt>
+    <dd>
+      The centre is <span class="m">s\, n_\infty\, s</span>, where <span class="m">s = C^{*}</span> is the circle's dual
+      vector. In words, it is the point at infinity reflected in the circle.
+    </dd>
+    <dt>Rotor</dt>
+    <dd>
+      <span class="m">R = (V_0 - V_1)\, L_x^{*}</span>, normalized: a reflection in the line
+      <span class="m">OV_0</span>, then in the bisector of <span class="m">V_0V_1</span> (the vector
+      <span class="m">V_0 - V_1</span>), which passes through <span class="m">O</span>. Rotor stepping
+      is <span class="m">\hat V_{k+1} = R\,\hat V_k\,\tilde R</span>.
+    </dd>
+    <dt>Compass stepping</dt>
+    <dd>
+      <span class="m">C_k = \big(V_k + (V_0\cdot V_1)\,n_\infty\big)^{*}</span> meets the unit circle in
+      <span class="m">V_{k-1}</span> and <span class="m">V_{k+1}</span>; the next vertex is the one
+      farther from <span class="m">V_{k-1}</span>, i.e. with the larger <span class="m">-X\cdot V_{k-1}</span>.
+    </dd>
+    <dt>Branch choice</dt>
+    <dd>
+      The only Euclidean readout: for a normalized point, <span class="m">x = P\cdot e_1</span> and
+      <span class="m">y = P\cdot e_2</span>, used to take the larger root or the upper point of a pair.
+    </dd>
+  </dl>
+  <aside class="note">
+    Two ganja.js details matter here. Inside <code>Algebra(…)</code>, <code>!x</code> is the dual, not
+    logical negation, so boolean tests are written <code>=== false</code>. And a literal such as
+    <code>1e-10</code> is read as a basis blade, so tolerances are written <code>1E-10</code>.
+  </aside>
+</section>
+
+<section class="col" id="polygons">
+  <h2><span class="no">3</span>Regular polygons by Carlyle circles</h2>
+  <p>
+    Gauss's construction of the 17-gon (<a class="cite" href="#ref-gauss">Gauss 1801</a>) solves a tower of quadratics in the Gauss periods
+    <span class="m">\eta</span>. Carlyle circles turn each quadratic into a single circle; the constructions here follow
+    <a class="cite" href="#ref-detemple">DeTemple 1991</a>. For a quadratic <span class="m">x^2 - s\,x + p = 0</span>, the Carlyle
+    circle has diameter <span class="m">A = (0,1)</span> to <span class="m">B = (s,p)</span> and meets the
+    x-axis at the two roots. Its centre is
+  </p>
+  <div class="md">M = \big(\tfrac{s}{2},\, \tfrac{1+p}{2}\big) = \operatorname{midpoint}\big(S = (s,0),\; Y = (0,\, 1+p)\big),</div>
+  <p>
+    so each Carlyle step only needs a point <span class="m">S</span> on the x-axis and a point
+    <span class="m">Y</span> on the y-axis, and the circle is <span class="m">C_M(A)</span>. What differs
+    between divisions is how <span class="m">S</span> and <span class="m">Y</span> come from earlier roots.
+  </p>
+  <h3>The frame</h3>
+  <p>
+    From <span class="m">O</span> and <span class="m">V_0</span>: the x-axis
+    <span class="m">O\wedge V_0\wedge n_\infty</span>, the unit circle <span class="m">C_O(V_0)</span>, their
+    second meet <span class="m">Q = (-1,0)</span>, the y-axis as the bisector of <span class="m">QV_0</span>,
+    and <span class="m">A = (0,1)</span> where it meets the unit circle.
+  </p>
+  <h3>The final step</h3>
+  <p>
+    Every division ends at <span class="m">H = (2\cos\tfrac{2\pi}{n},\,0)</span>. The circle at
+    <span class="m">H</span> with radius <span class="m">\lvert OV_0\rvert</span> meets the unit circle at
+    <span class="m">V_1</span> and <span class="m">V_{n-1}</span>, whose x-coordinate is
+    <span class="m">\cos\tfrac{2\pi}{n}</span>; then rotor and compass stepping.
+  </p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>n</th><th>How H is reached</th></tr></thead>
+      <tbody>
+        <tr><td>3</td><td><span class="m">2\cos 120^\circ = -1</span>: <span class="m">H = Q</span>.</td></tr>
+        <tr><td>4</td><td><span class="m">H = O</span> makes the final circle the unit circle itself, so the meet is degenerate; <span class="m">V_1 = A</span> instead, and the y-axis gives <span class="m">V_3</span>.</td></tr>
+        <tr><td>5</td><td><span class="m">\eta_0 + \eta_1 = -1</span>, <span class="m">\eta_0\eta_1 = -1</span>: <span class="m">S = Q</span>, <span class="m">Y = O</span>, so the centre is <span class="m">Q'</span>, the midpoint of <span class="m">QO</span>. One Carlyle circle.</td></tr>
+        <tr><td>6</td><td><span class="m">2\cos 60^\circ = 1</span>: <span class="m">H = V_0</span>.</td></tr>
+        <tr><td>15</td><td>Euclid IV.16, below.</td></tr>
+        <tr><td>17</td><td>Four Carlyle circles, below.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <h3>The 17-gon</h3>
+  <p>The steps follow DeTemple's construction of the 17-gon by four Carlyle circles (<a class="cite" href="#ref-detemple">DeTemple 1991</a>).</p>
+  <ul>
+    <li>
+      Periods of length 8: <span class="m">x^2 + x - 4 = 0</span>. Its centre <span class="m">A_0 = (-\tfrac12,-\tfrac32)</span>
+      is where the circle at <span class="m">Q'</span> through <span class="m">V_0</span> (radius <span class="m">\tfrac32</span>)
+      meets the bisector of <span class="m">QO</span>. Roots <span class="m">A_1 = \eta_{0,2}</span>, <span class="m">A_2 = \eta_{1,2}</span>.
+    </li>
+    <li>
+      Length 4: <span class="m">\eta_{0,4}+\eta_{2,4} = \eta_{0,2}</span>, <span class="m">\eta_{0,4}\eta_{2,4} = -1</span>,
+      and likewise for <span class="m">\eta_{1,2}</span>. With <span class="m">p = -1</span>, <span class="m">Y = O</span>, so the centres
+      are the midpoints of <span class="m">OA_1</span> and <span class="m">OA_2</span>; the larger roots are <span class="m">A_5, A_6</span>.
+    </li>
+    <li>
+      Length 2: <span class="m">\eta_{0,8} + \eta_{4,8} = \eta_{0,4}</span>, <span class="m">\eta_{0,8}\eta_{4,8} = \eta_{1,4}</span>.
+      Here <span class="m">Y = (0,\,1+\eta_{1,4})</span>: the compass opened to <span class="m">\lvert QA_6\rvert = 1 + \eta_{1,4}</span>
+      at <span class="m">Q</span> and placed at <span class="m">O</span> meets the y-axis at <span class="m">A_7</span>. The centre
+      <span class="m">A_8</span> bisects <span class="m">A_7A_5</span>, and the larger root is
+      <span class="m">A_9 = 2\cos\tfrac{2\pi}{17}</span>.
+    </li>
+  </ul>
+  <h3>The 15-gon (<a class="cite" href="#ref-euclid">Euclid IV.16</a>)</h3>
+  <p>
+    Since <span class="m">\tfrac25 - \tfrac13 = \tfrac1{15}</span>, the triangle vertex
+    <span class="m">U_1</span> (at 120°) and the second pentagon vertex <span class="m">P_2</span> (at 144°)
+    are themselves 15-gon vertices, <span class="m">V_5</span> and <span class="m">V_6</span>. The compass
+    opened to <span class="m">\lvert U_1P_2\rvert</span>, the circle <span class="m">C_{U_1}(P_2)</span>, is the
+    side, and the polygon is stepped from that edge with
+    <span class="m">R = (U_1 - P_2)\, L_{OU_1}^{*}</span>. Nothing has to be transferred to
+    <span class="m">V_0</span>.
+  </p>
+</section>
+
+<aside class="col legend-box" id="legend" aria-label="Legend for the construction panels">
+  <h3>Reading the construction panels</h3>
+  <p>
+    Each demo lists, step by step, the CGA operations it ran. The same notation is used in all of them, in the plane
+    (CGA2D) and in space (CGA3D).
+  </p>
+  <dl class="dict">
+    <dt>Operators</dt>
+    <dd><span class="m">\wedge</span> join (<code>^</code>), <span class="m">\vee</span> meet (<code>&amp;</code>),
+      <span class="m">X^{*}</span> dual (<code>!X</code>), <span class="m">\cdot</span> inner product (<code>|</code>),
+      <span class="m">\tilde R</span> reverse (<code>~R</code>).</dd>
+    <dt>Points</dt>
+    <dd><span class="m">P = n_o + p + \tfrac12 p^2 n_\infty</span>, normalized so <span class="m">-P\cdot n_\infty = 1</span>;
+      then <span class="m">P\cdot Q = -\tfrac12\lvert p - q\rvert^2</span>.</dd>
+    <dt>Compass</dt>
+    <dd>The circle (in 2D) or sphere (in 3D) centred at <span class="m">C</span> with radius
+      <span class="m">\lvert P_1P_2\rvert</span> is <span class="m">\big(C + (P_1\cdot P_2)\, n_\infty\big)^{*}</span>.
+      In 3D a sphere's circle in the construction plane is <span class="m">S \vee \Pi_0</span>.</dd>
+    <dt>Splitting</dt>
+    <dd><span class="m">\operatorname{split}(T)</span> gives the two points of a point pair,
+      <span class="m">\big(T \pm \sqrt{T\cdot T}\big)\,(n_\infty \rfloor T)</span>; <span class="m">\operatorname{pt}(F)</span>
+      gives the point of a flat point (two lines meeting, or a line meeting a plane).</dd>
+    <dt>Orange points</dt>
+    <dd>The centres of the current step's circles or spheres.</dd>
+    <dt>Names in 2D</dt>
+    <dd><span class="m">C_X(P)</span> circle centred at <span class="m">X</span> through <span class="m">P</span>;
+      <span class="m">C_X(\lvert PQ\rvert)</span> circle with radius <span class="m">\lvert PQ\rvert</span>;
+      <span class="m">K_M</span> Carlyle circle; <span class="m">L_{AB}</span> line; <span class="m">B_{AB}</span> bisector;
+      <span class="m">T</span> point pair; <span class="m">\hat V_k</span> rotor-stepped vertex.</dd>
+    <dt>Names in 3D</dt>
+    <dd><span class="m">S_X(P)</span>, <span class="m">S_X(\lvert PQ\rvert)</span> spheres; <span class="m">K</span> circle where two
+      spheres meet; <span class="m">\beta</span> bisector plane; <span class="m">L^{\uparrow}_C</span> vertical line through
+      <span class="m">C</span>; <span class="m">\Pi_0</span> construction plane; <span class="m">I_k</span> vertices,
+      <span class="m">J_k</span> on the unit sphere.</dd>
+  </dl>
+  <p>The demo pages show this legend in their own panel when opened on their own.</p>
+</aside>
+
+<figure class="demo wide" id="figure-4" aria-label="Live demo: regular polygons in CGA2D">
+  <div class="frame"><button type="button" class="close" hidden>Close</button><iframe src="polygons.html#n3" title="Regular polygons by Carlyle circles in CGA2D" loading="lazy"></iframe></div>
+  <figcaption>
+    <span><b>Figure 4.</b> Demo · CGA2D. Opens on the 3-gon; choose another polygon, step through the construction, and read the recorded
+      operations on the right. <span class="swatch" style="background:var(--construct)"></span>current step,
+      <span class="swatch" style="background:var(--rotor)"></span>rotor stepping. Scroll to zoom, drag to pan.</span>
+    <span class="actions"><button type="button" class="expand">Full screen</button> <a href="polygons.html#n3">Open page</a></span>
+  </figcaption>
+</figure>
+
+<section class="col" id="lifting">
+  <h2><span class="no">4</span>Lifting spheres in CGA3D</h2>
+  <p>
+    In <span class="m">\mathbb{R}^{4,1}</span>, take the construction plane <span class="m">\Pi_0</span>
+    (in the demos ganja's floor, so heights point up on screen). A sphere of radius
+    <span class="m">\rho</span> centred at a point lifted by <span class="m">h</span> above <span class="m">C</span>
+    cuts <span class="m">\Pi_0</span> in the circle centred at <span class="m">C</span> with radius
+    <span class="m">\sqrt{\rho^2 - h^2}</span>.
+  </p>
+  <p>
+    Write <span class="m">e_h</span> for the unit vector perpendicular to <span class="m">\Pi_0</span>: the height
+    direction, the plane's normal. (The <span class="m">h</span> in its name stands for height; it is a label, not an
+    operation.) In the demos <span class="m">e_h = e_2</span>, ganja's vertical, and up to sign it is the plane's dual
+    <span class="m">\Pi_0^{*}</span>, the direction the vertical lines below use. The point at height
+    <span class="m">h</span> above <span class="m">C</span> has Euclidean position <span class="m">c + h\,e_h</span>,
+    and since <span class="m">c</span> lies in the plane, <span class="m">c\cdot e_h = 0</span>, its squared length is
+    <span class="m">c^2 + h^2</span>, so
+  </p>
+  <div class="md">C' = n_o + c + h\,e_h + \tfrac12\big(c^2 + h^2\big)\, n_\infty = C + h\,e_h + \tfrac12 h^2\, n_\infty,
+    \qquad C\cdot C' = -\tfrac12 h^2 .</div>
+  <p>
+    Algebraically the lift is therefore one inner-product term: the cut is the in-plane circle
+  </p>
+  <div class="md">C + \big(P_1\cdot P_2 - C\cdot C'\big)\, n_\infty, \qquad P_1\cdot P_2 = -\tfrac12\rho^2 .</div>
+  <p>
+    Lifting subtracts <span class="m">h^2</span> from the squared radius. The question is how to locate
+    <span class="m">C'</span> with CGA3D operations alone.
+  </p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Method</th><th>Construction</th><th>Picks a given h?</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>1. Stand a length up</td>
+          <td>Vertical line <span class="m">L^{\uparrow}_C = C\wedge\Pi_0^{*}\wedge n_\infty</span>;
+            <span class="m">C' = \operatorname{split}\big(L^{\uparrow}_C \vee S_C(\lvert P_1P_2\rvert)\big)</span>, higher point.</td>
+          <td>Yes, directly</td>
+        </tr>
+        <tr>
+          <td>2. Trilateration</td>
+          <td>Three spheres centred in <span class="m">\Pi_0</span> meet in a pair mirror-symmetric in
+            <span class="m">\Pi_0</span>: <span class="m">T = S_A\vee S_B\vee S_C</span>. Its line
+            <span class="m">T\wedge n_\infty</span> is vertical.</td>
+          <td>No, h is a by-product</td>
+        </tr>
+        <tr>
+          <td>3. Reflection</td>
+          <td><span class="m">(C - Q)\,X\,(C - Q)</span> moves a lifted point <span class="m">X</span> above
+            <span class="m">Q</span> to the same height above <span class="m">C</span>.</td>
+          <td>No, it reuses a height</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <p>
+    A variant of method 1 fits a fixed sphere size: the vertical through <span class="m">Q</span> meets the
+    sphere of radius <span class="m">\rho</span> at <span class="m">C</span> at height
+    <span class="m">\sqrt{\rho^2 - \lvert CQ\rvert^2}</span>, which is Pythagoras done by a single meet.
+  </p>
+  <h3>The pentagon by a lifted sphere</h3>
+  <p>
+    The 5-gon's Carlyle circle has centre <span class="m">Q'</span> and radius
+    <span class="m">\lvert Q'A\rvert = \tfrac{\sqrt5}{2}</span>, and by Pythagoras
+  </p>
+  <div class="md">\lvert Q'A\rvert^2 = \lvert Q'V_0\rvert^2 - \lvert OV_0\rvert^2 = \tfrac94 - 1 = \tfrac54 .</div>
+  <p>
+    So the sphere of radius <span class="m">\lvert Q'V_0\rvert</span> centred at <span class="m">Q'</span> lifted
+    by <span class="m">\lvert OV_0\rvert</span> cuts <span class="m">\Pi_0</span> in exactly the Carlyle circle.
+    Both lengths are already in the plane, so the lift is method 1. The rest carries over from 2D:
+    <span class="m">S_A(B)\vee S_B(A)</span> is a circle <span class="m">K</span> whose carrier plane
+    <span class="m">\beta = K\wedge n_\infty</span> is the bisector plane, so <span class="m">\beta\vee\Pi_0</span> is the
+    bisector and <span class="m">\operatorname{pt}(L_{AB}\vee\beta)</span> the midpoint; circles meet in the plane as
+    <span class="m">S_1\vee S_2\vee\Pi_0</span>; and the rotor reflects in vertical planes,
+    <span class="m">R = (V_0 - V_1)\,\Pi_x^{*}</span> with <span class="m">\Pi_x = L_x\wedge\Pi_0^{*}</span>.
+  </p>
+</section>
+
+<figure class="demo wide" id="figure-5" aria-label="Live demo: pentagon by a lifted sphere">
+  <div class="frame"><button type="button" class="close" hidden>Close</button><iframe src="pentagon-lift.html" title="Pentagon by a lifted sphere in CGA3D" loading="lazy"></iframe></div>
+  <figcaption>
+    <span><b>Figure 5.</b> Demo · CGA3D. Step 3 stands <span class="m">\lvert OV_0\rvert</span> up on the vertical through
+      <span class="m">Q'</span>; step 4's lifted sphere cuts the floor in the Carlyle circle. Drag to rotate, scroll to zoom
+      (needs WebGL).</span>
+    <span class="actions"><button type="button" class="expand">Full screen</button> <a href="pentagon-lift.html">Open page</a></span>
+  </figcaption>
+</figure>
+
+<section class="col" id="solids">
+  <h2><span class="no">5</span>Platonic solids</h2>
+  <p>Each 2D tool has a 3D counterpart, which gives three routes to the vertices of a solid:</p>
+  <ul>
+    <li><b><a class="cite" href="#ref-euclid">Euclid XIII</a> with method 1.</b> Plane constructions plus lengths stood up on perpendiculars.</li>
+    <li><b>Trilateration stepping</b>, the 3D compass stepping: a vertex adjacent to known <span class="m">A</span>
+      and <span class="m">B</span> is <span class="m">\operatorname{split}\big(S_u\vee S_A(e)\vee S_B(e)\big)</span>,
+      for edge length <span class="m">e</span> (relative to the circumradius: tetrahedron <span class="m">\sqrt{8/3}</span>,
+      octahedron <span class="m">\sqrt2</span>, cube <span class="m">2/\sqrt3</span>, icosahedron
+      <span class="m">4/\sqrt{10+2\sqrt5}</span>, dodecahedron <span class="m">4/\big(\sqrt3(1+\sqrt5)\big)</span>).</li>
+    <li><b>Reflection groups</b>, the 3D rotor stepping: the vertices are the orbit of a seed point under
+      <span class="m">A_3</span>, <span class="m">B_3</span> or <span class="m">H_3</span>, with each mirror plane through
+      <span class="m">O</span> a vector, as <span class="m">V_0 - V_1</span> already is (on <span class="m">H_3</span> in Clifford
+      algebra, see <a class="cite" href="#ref-dechant">Dechant 2014</a>).</li>
+  </ul>
+  <h3>All five by route 1</h3>
+  <p>
+    Every vertex comes from the same stand-up: a line through a point <span class="m">C</span> meets a sphere centred at
+    <span class="m">C</span>, and the point pair gives both signs, so one meet yields two vertices. The lengths stood up are
+    <span class="m">\lvert OV_0\rvert = 1</span> and, for the icosahedron and dodecahedron, <span class="m">\lvert OH'\rvert = \varphi</span>
+    and <span class="m">\lvert OH\rvert = 1/\varphi</span>: the pentagon construction's Carlyle roots are
+    <span class="m">H = 1/\varphi</span> and <span class="m">H' = -\varphi</span>. In the floor coordinates
+    <span class="m">(u, v, h)</span>, before scaling:
+  </p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Solid</th><th>Vertices</th><th>How they are reached</th></tr></thead>
+      <tbody>
+        <tr><td>Octahedron</td><td><span class="m">(\pm1,0,0),\ (0,\pm1,0),\ (0,0,\pm1)</span></td><td><span class="m">V_0, Q, A, A'</span> from the frame; <span class="m">\lvert OV_0\rvert</span> stood up on the vertical through <span class="m">O</span>. Already on the unit sphere.</td></tr>
+        <tr><td>Cube</td><td><span class="m">(\pm1,\pm1,\pm1)</span></td><td>Euclid I.11: <span class="m">E = (\pm2,0)</span>, and the bisectors of <span class="m">OE</span> are the lines <span class="m">u=\pm1</span>; <span class="m">\lvert OV_0\rvert</span> along them gives the floor square <span class="m">F_1\dots F_4 = (\pm1,\pm1)</span>; <span class="m">\lvert OV_0\rvert</span> up on the verticals there.</td></tr>
+        <tr><td>Tetrahedron</td><td>alternate cube vertices</td><td>The cube, then <span class="m">I_1</span> and the three <span class="m">I_j</span> with <span class="m">I_1\cdot I_j = -\tfrac12(2\sqrt2)^2 = -4</span> (its face diagonals).</td></tr>
+        <tr><td>Icosahedron</td><td>cyclic permutations of <span class="m">(0,\pm1,\pm\varphi)</span></td><td><span class="m">G = (\varphi,0)</span> from <span class="m">S_O(H')\vee L_x</span>; 1 up at <span class="m">G, H'</span>; <span class="m">\varphi</span> up at <span class="m">A, A'</span>; <span class="m">\varphi</span> along <span class="m">u=\pm1</span>.</td></tr>
+        <tr><td>Dodecahedron</td><td><span class="m">(\pm1,\pm1,\pm1)</span> and cyclic permutations of <span class="m">(0,\pm1/\varphi,\pm\varphi)</span></td><td>The cube; <span class="m">S_O(H)</span> meets the axes at <span class="m">K = (-1/\varphi,0)</span> and <span class="m">N, N' = (0,\pm1/\varphi)</span>; <span class="m">\varphi</span> along the perpendiculars <span class="m">u = \pm1/\varphi</span> at <span class="m">H, K</span>; <span class="m">\varphi</span> up at <span class="m">N, N'</span>; <span class="m">1/\varphi</span> up at <span class="m">G, H'</span>.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>
+    For every solid the edges are the vertex pairs at the minimum distance, read from the inner products
+    <span class="m">I_i\cdot I_j = -\tfrac12 e^2</span>. The faces are the planes
+    <span class="m">\pi = I_i\wedge I_j\wedge I_k\wedge n_\infty</span> through adjacent vertices that leave every vertex on one
+    side, the sign of <span class="m">X\wedge\pi</span>: triangles, squares or pentagons alike. Radial projection then fits
+    the unit sphere: <span class="m">J_k</span> is the point of <span class="m">L_{OI_k}\vee S_u</span> nearer <span class="m">I_k</span>,
+    a uniform scaling (for the icosahedron by <span class="m">1/\sqrt{1+\varphi^2}</span>, giving the edge
+    <span class="m">4/\sqrt{10+2\sqrt5}\approx 1.0515</span>).
+  </p>
+  <h3>Building the vertical lines</h3>
+  <p>
+    <span class="m">C\wedge\Pi_0^{*}\wedge n_\infty</span> reads the perpendicular off the plane's dual. Two
+    classical alternatives build it from spheres; the demo can show any of the three.
+  </p>
+  <ul>
+    <li><b>Two bisector planes (Euclid XI.11–12).</b> The circle of radius 1 around the base point meets the
+      floor line at <span class="m">D_1, D_2</span>; their bisector plane <span class="m">\beta_1</span> is vertical and
+      cuts the floor in the perpendicular, which meets the circle at <span class="m">D_3, D_4</span>; their bisector plane
+      is <span class="m">\beta_2</span>, and <span class="m">L^{\uparrow} = \beta_1\vee\beta_2</span>.</li>
+    <li><b>Three spheres.</b> Spheres of equal radius around three points of a circle in <span class="m">\Pi_0</span> meet
+      in a pair <span class="m">T^{\uparrow}</span> on its axis, so <span class="m">L^{\uparrow} = T^{\uparrow}\wedge n_\infty</span>,
+      the 3D counterpart of <span class="m">B_{AB} = T_{AB}\wedge n_\infty</span>. With radius <span class="m">\sqrt2</span>
+      around points of the unit circle about <span class="m">G</span>, the pair sits at height
+      <span class="m">\sqrt{2-1} = 1</span>: it is the icosahedron's vertices <span class="m">(\varphi, 0, \pm1)</span> themselves.</li>
+  </ul>
+</section>
+
+<figure class="demo wide" id="figure-6" aria-label="Live demo: Platonic solids">
+  <div class="frame"><button type="button" class="close" hidden>Close</button><iframe src="platonic-solids.html#octahedron" title="Platonic solids from stood-up lengths in CGA3D" loading="lazy"></iframe></div>
+  <figcaption>
+    <span><b>Figure 6.</b> Demo · CGA3D. Opens on the octahedron, the shortest construction; choose the solid, how vertical lines are built, and how the current step's spheres are drawn
+      (as spheres, as the circles where they meet, or hidden). Drag to rotate, scroll to zoom (needs WebGL).</span>
+    <span class="actions"><button type="button" class="expand">Full screen</button> <a href="platonic-solids.html#octahedron">Open page</a></span>
+  </figcaption>
+</figure>
+
+<section class="col" id="theory">
+  <h2><span class="no">6</span>What can be constructed</h2>
+  <h3>Why 3D adds nothing new</h3>
+  <p>Every operation on these pages is an intersection of lines, planes and spheres:</p>
+  <ul>
+    <li>Planes and lines give linear equations.</li>
+    <li>Two spheres <span class="m">\lvert x - a\rvert^2 = r^2</span> and <span class="m">\lvert x - b\rvert^2 = s^2</span>
+      subtract to a linear equation, the radical plane. That is the bisector plane <span class="m">\beta</span> that the
+      bisection builds.</li>
+    <li>So any meet involving spheres comes down to linear equations plus a single quadratic.</li>
+  </ul>
+  <p>
+    Each construction step therefore adds at most one square root, and lifting a sphere adds nothing more: its cut
+    has radius <span class="m">\sqrt{\rho^2 - h^2}</span>. A length or coordinate is constructible with these tools
+    exactly when it lies in a tower of quadratic extensions of <span class="m">\mathbb{Q}</span>, the same field as
+    plane constructions (<a class="cite" href="#ref-wantzel">Wantzel 1837</a>). A third dimension, spheres, lifts and trilateration change how short or
+    elegant a construction is, never what it can reach.
+  </p>
+  <h3>Polygons: the same list as Gauss–Wantzel</h3>
+  <p>
+    A regular <span class="m">n</span>-gon is constructible exactly when
+    <span class="m">n = 2^k\, p_1\cdots p_m</span> with the <span class="m">p_i</span> distinct Fermat primes
+    (3, 5, 17, 257, 65537). In 3D this still rules out the 7-gon and the 9-gon.
+  </p>
+  <h3>Solids: the symmetry-group view</h3>
+  <p>The finite rotation groups of 3D space come in five families:</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Group</th><th>Symmetry of</th><th>Rotation angles</th><th>Constructible?</th></tr></thead>
+      <tbody>
+        <tr><td>cyclic <span class="m">C_n</span>, dihedral <span class="m">D_n</span></td><td>pyramids, prisms, n-gons</td><td><span class="m">2\pi/n</span></td><td>exactly when the n-gon is (Gauss–Wantzel)</td></tr>
+        <tr><td>tetrahedral <span class="m">T</span></td><td>tetrahedron</td><td><span class="m">2\pi/3,\ \pi</span></td><td>always</td></tr>
+        <tr><td>octahedral <span class="m">O</span></td><td>cube, octahedron</td><td><span class="m">\pi/2,\ 2\pi/3,\ \pi</span></td><td>always</td></tr>
+        <tr><td>icosahedral <span class="m">I</span></td><td>icosahedron, dodecahedron</td><td><span class="m">2\pi/5,\ 2\pi/3,\ \pi</span></td><td>always (needs <span class="m">\sqrt5</span>, from the pentagon)</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <blockquote class="quote">
+    <p>The rotations of T, O and I only involve √2, √3 and √5. From that it follows that the orbit of a constructible point under T, O or I is always constructible, and under Cₙ or Dₙ exactly when the n-gon is. I'm not aware of a named theorem stating this, but it follows directly from the field argument above.</p>
+  </blockquote>
+  <p>Some consequences:</p>
+  <ul>
+    <li><b>All five Platonic solids are constructible</b> (Euclid, Book XIII). Their coordinates need only
+      <span class="m">\sqrt2</span>, <span class="m">\sqrt3</span> and <span class="m">\sqrt5</span>.</li>
+    <li><b>All Archimedean solids are constructible except the snub cube and the snub dodecahedron.</b> The snub cube's
+      vertices are the even permutations of <span class="m">(\pm1, \pm1/t, \pm t)</span> with an odd number of minus signs,
+      where <span class="m">t\approx 1.839</span> is the tribonacci constant, a root of the irreducible cubic
+      <span class="m">t^3 - t^2 - t - 1 = 0</span>. Since <span class="m">t</span> is a ratio of lengths, no scaling helps.
+      The snub dodecahedron needs a root of a cubic over <span class="m">\mathbb{Q}(\sqrt5)</span>.</li>
+    <li><b>Some Johnson solids fail the same way</b>; the snub disphenoid's coordinates satisfy an irreducible cubic.</li>
+  </ul>
+  <p>
+    Adding one non-quadratic tool (angle trisection, neusis, a conic, origami folds) changes the answer. Gleason
+    (<a class="cite" href="#ref-gleason">1988</a>) showed that with an angle trisector the
+    <span class="m">n</span>-gon is constructible exactly when <span class="m">n = 2^r 3^s p_1\cdots p_m</span> with distinct
+    Pierpont primes <span class="m">p_i = 2^u 3^v + 1 &gt; 3</span> (7, 13, 19, 37, 73, …). That brings in the 7-gon and the
+    9-gon, and its cube roots reach the snub solids.
+  </p>
+</section>
+
+<section class="col" id="parabola">
+  <h2><span class="no">7</span>Beyond square roots: a parabola</h2>
+  <p>
+    Descartes' method (<a class="cite" href="#ref-descartes">La Géométrie, 1637</a>) solves any cubic or quartic with one fixed parabola <span class="m">y = x^2</span> and circles.
+    Substituting into <span class="m">x^2 + y^2 + Dx + Ey + F = 0</span> gives
+  </p>
+  <div class="md">x^4 + (1 + E)\,x^2 + D\,x + F = 0 .</div>
+  <p>
+    For a depressed cubic <span class="m">t^3 + pt + q = 0</span>, multiply by <span class="m">t</span>: the quartic
+    <span class="m">t^4 + pt^2 + qt</span> needs <span class="m">E = p - 1</span>, <span class="m">D = q</span>,
+    <span class="m">F = 0</span>, so the circle passes through <span class="m">O</span> with centre
+  </p>
+  <div class="md">\Big(-\frac{q}{2},\ \frac{1 - p}{2}\Big),</div>
+  <p>built from the cubic's coefficients by ordinary constructions. It meets the parabola at the origin and at <span class="m">x = t</span> for each real root.</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Target</th><th>Cubic</th><th>Circle centre (through O)</th></tr></thead>
+      <tbody>
+        <tr><td>9-gon</td><td><span class="m">x^3 - 3x + 1 = 0</span>, root <span class="m">2\cos 40^\circ</span></td><td><span class="m">(-\tfrac12,\ 2)</span>, radius <span class="m">\tfrac{\sqrt{17}}{2}</span></td></tr>
+        <tr><td>7-gon</td><td><span class="m">x^3 + x^2 - 2x - 1 = 0</span>; <span class="m">x = t - \tfrac13</span> gives <span class="m">t^3 - \tfrac73 t - \tfrac{7}{27}</span></td><td><span class="m">(\tfrac{7}{54},\ \tfrac53)</span></td></tr>
+        <tr><td>snub cube</td><td><span class="m">t^3 - t^2 - t - 1 = 0</span>; <span class="m">t = s + \tfrac13</span> gives <span class="m">s^3 - \tfrac43 s - \tfrac{38}{27}</span></td><td><span class="m">(\tfrac{19}{27},\ \tfrac76)</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>
+    For the 9-gon the circle meets the parabola at <span class="m">x = 0</span> and at
+    <span class="m">2\cos40^\circ\approx 1.532</span>, <span class="m">2\cos80^\circ\approx 0.347</span> and
+    <span class="m">2\cos160^\circ\approx -1.879</span>. Any fixed non-degenerate conic would do (Pappus trisected with a
+    rectangular hyperbola, Menaechmus doubled the cube with two parabolas); with one, compass and straightedge reach the
+    towers of degree-2 and degree-3 extensions, the same field as origami.
+  </p>
+  <p>
+    In the demo below, the centre <span class="m">M = (-\tfrac12, 2)</span> is constructed classically: <span class="m">Q'</span>
+    bisects <span class="m">QO</span>, then <span class="m">\lvert QV_0\rvert = 2</span> is laid along the bisector. The
+    parabola is not a CGA object, so its intersection <span class="m">X</span> with <span class="m">C_M(O)</span> is the one
+    step computed numerically. Then <span class="m">X' = L_x^{*} X L_x^{*}</span> reflects it in the x-axis, the line
+    <span class="m">XX'</span> meets the axis at <span class="m">H = (2\cos 40^\circ, 0)</span>, and the usual final step and
+    rotor finish the 9-gon.
+  </p>
+</section>
+
+<figure class="demo wide" id="figure-7" aria-label="Live demo: 9-gon with a parabola">
+  <div class="frame"><button type="button" class="close" hidden>Close</button><iframe src="polygons.html#n9" title="9-gon from a circle and a parabola" loading="lazy"></iframe></div>
+  <figcaption>
+    <span><b>Figure 7.</b> Demo · CGA2D with one non-classical step. The same page as above, opened on the 9-gon; the parabola is
+      drawn in teal from step 2.</span>
+    <span class="actions"><button type="button" class="expand">Full screen</button> <a href="polygons.html#n9">Open page</a></span>
+  </figcaption>
+</figure>
+
+<section class="col" id="open">
+  <h2><span class="no">8</span>Open directions</h2>
+  <div class="unverified">
+    <strong>UNVERIFIED.</strong> The descriptions in this section were written from memory: check the basis and sign
+    conventions against the sources before relying on them. The publication details in the references have been checked.
+  </div>
+  <h3>Conic space, ℝ⁶ (Perwass)</h3>
+  <p>
+    Six is the smallest dimension in which every conic <span class="m">ax^2 + by^2 + 2hxy + 2gx + 2fy + c = 0</span> is a vector.
+    Perwass (<a class="cite" href="#ref-perwass">2009</a>) builds conic space on the symmetric
+    <span class="m">3\times3</span> matrices with the trace inner product:
+  </p>
+  <ul>
+    <li>A conic is the vector <span class="m">M = \begin{pmatrix} a &amp; h &amp; g\\ h &amp; b &amp; f\\ g &amp; f &amp; c\end{pmatrix}</span>.</li>
+    <li>A point is <span class="m">X = \hat x\hat x^{\mathsf T}</span>, <span class="m">\hat x = (x, y, 1)</span>, the Veronese embedding:
+      <span class="m">(x^2, y^2, \sqrt2\,xy, \sqrt2\,x, \sqrt2\,y, 1)</span> in an orthonormal basis.</li>
+    <li>Incidence is the inner product, <span class="m">X\cdot M = \hat x^{\mathsf T} M \hat x</span>, and the outer product of five
+      points gives the dual of the conic through them.</li>
+    <li>The parabola <span class="m">y = x^2</span> is <span class="m">a = 1</span>, <span class="m">f = -\tfrac12</span>, all else zero. With a
+      circle <span class="m">C</span>, the intersections satisfy <span class="m">X\rfloor(P\wedge C) = 0</span>: the pencil carries them.</li>
+  </ul>
+  <p>
+    Two limits compared with CGA: valid points must lie on the Veronese surface, so the four intersections cannot be
+    read off by factorizing a blade (extracting them is the quartic itself); and not every Euclidean motion is a versor,
+    translations in particular.
+  </p>
+  <h3>GAC, ℝ<sup>5,3</sup></h3>
+  <p>
+    The geometric algebra for conics of Hrdina, Návrat and Vašík (<a class="cite" href="#ref-gac">2018</a>) keeps conics as vectors and restores
+    translations, rotations and scalings as versors, with the plane's CGA <span class="m">\mathbb{R}^{3,1}</span> inside it. A 9-gon
+    construction in the style of these pages (meets, sandwiches, rotors, plus a parabola) fits there.
+  </p>
+  <h3>Other 6D algebras</h3>
+  <ul>
+    <li><span class="m">\mathbb{R}^{5,1}</span>, the CGA of 4D space: hyperspheres and hyperplanes; a parabola is not a native element.</li>
+    <li><span class="m">\mathbb{R}^{4,2}</span>, Lie sphere geometry of the plane (or Plücker line geometry of 3D): oriented circles,
+      lines and points with tangency as orthogonality; a parabola appears only indirectly, as an envelope.</li>
+  </ul>
+  <p>
+    Inside CGA itself there is a hint: the embedding <span class="m">n_o + x\,e_1 + \tfrac12 x^2 n_\infty</span> traces
+    <span class="m">\tfrac12 x^2</span> in its <span class="m">n_\infty</span> coefficient, so the point embedding already is a
+    parabola, but the algebra cannot meet it with an arbitrary circle. That step from quadratics to quartics is what the larger
+    algebras add.
+  </p>
+</section>
+
+<section class="col" id="references">
+  <h2>References</h2>
+  <ol class="refs">
+    <li id="ref-detemple">Duane W. DeTemple, “Carlyle Circles and the Lemoine Simplicity of Polygon Constructions,”
+      <i>The American Mathematical Monthly</i> 98, no. 2 (1991), 97–108.
+      <a href="http://links.jstor.org/sici?sici=0002-9890%28199102%2998%3A2%3C97%3ACCATLS%3E2.0.CO%3B2-P">JSTOR</a>.
+      The Carlyle-circle constructions of the regular polygons, including the 17-gon construction followed here.</li>
+    <li id="ref-gauss">Carl Friedrich Gauss, <i>Disquisitiones Arithmeticae</i> (1801), section VII: the Gauss periods and the
+      constructibility of the 17-gon.</li>
+    <li id="ref-wantzel">Pierre L. Wantzel, “Recherches sur les moyens de reconnaître si un problème de géométrie peut se
+      résoudre avec la règle et le compas,” <i>Journal de Mathématiques Pures et Appliquées</i> 2 (1837), 366–372.
+      <a href="https://www.numdam.org/item/JMPA_1837_1_2__366_0/">Numdam</a>.</li>
+    <li id="ref-gleason">Andrew M. Gleason, “Angle Trisection, the Heptagon, and the Triskaidecagon,”
+      <i>The American Mathematical Monthly</i> 95 (1988), 185–194.
+      <a href="https://doi.org/10.1080/00029890.1988.11971989">doi:10.1080/00029890.1988.11971989</a>.</li>
+    <li id="ref-euclid">Euclid, <i>Elements</i>: I.11 (a perpendicular at a point of a line), IV.16 (the 15-gon), XI.11–12
+      (a perpendicular to a plane), XIII.13–17 (the five regular solids inscribed in a sphere).</li>
+    <li id="ref-descartes">René Descartes, <i>La Géométrie</i> (1637), book III: cubic and quartic equations solved with a
+      parabola and a circle.</li>
+    <li id="ref-dorst">Leo Dorst, Daniel Fontijne and Stephen Mann, <i>Geometric Algebra for Computer Science</i>,
+      Morgan Kaufmann (2007): a full treatment of conformal geometric algebra.</li>
+    <li id="ref-perwass">Christian Perwass, <i>Geometric Algebra with Applications in Engineering</i>, Geometry and
+      Computing 4, Springer (2009). <a href="https://doi.org/10.1007/978-3-540-89068-3">doi:10.1007/978-3-540-89068-3</a>.</li>
+    <li id="ref-gac">Jaroslav Hrdina, Aleš Návrat and Petr Vašík, “Geometric Algebra for Conics,”
+      <i>Advances in Applied Clifford Algebras</i> 28 (2018), article 66.
+      <a href="https://doi.org/10.1007/s00006-018-0879-2">doi:10.1007/s00006-018-0879-2</a>.</li>
+    <li id="ref-dechant">Pierre-Philippe Dechant, “A Clifford Algebraic Framework for Coxeter Group Theoretic
+      Computations,” <i>Advances in Applied Clifford Algebras</i> 24 (2014), 89–108.
+      <a href="https://doi.org/10.1007/s00006-013-0422-4">doi:10.1007/s00006-013-0422-4</a>.</li>
+    <li id="ref-ganja">Steven De Keninck, <i>ganja.js</i>, a geometric algebra library for JavaScript, used for every figure
+      on this page. <a href="https://github.com/enkimute/ganja.js">github.com/enkimute/ganja.js</a>.</li>
+  </ol>
+</section>
+
+<section class="col" id="further-reading">
+  <h2>Further reading</h2>
+  <p>
+    For more on geometric algebra, including introductions, tools and community resources, see
+    <a href="https://bivector.net/">bivector.net</a>.
+  </p>
+</section>
+</main>
+
+<footer class="col">
+  The demos are the pages <a href="polygons.html">polygons</a>, <a href="pentagon-lift.html">pentagon-lift</a> and
+  <a href="platonic-solids.html">platonic-solids</a>; the source is at
+  <a href="https://github.com/icaven/cga-constructions">github.com/icaven/cga-constructions</a>. The 3D demos need WebGL.
+  Each demo's operations panel is recorded by the construction helpers as they run, so it always matches what was computed.
+  Every figure is drawn with <a class="cite" href="#ref-ganja">ganja.js</a>.
+</footer>
+
+<script>
+  // Small live figures for the primer. Each is a ganja.js conformal 2D graph
+  // whose points can be dragged; the readouts update on ganja's input event.
+  // Inside Algebra(), ! is the dual and | the inner product.
+  Algebra(3, 1, () => {
+    const ni = 1e4 + 1e3, no = 0.5*(1e4 - 1e3);
+    const pt = (x, y) => no + x*1e1 + y*1e2 + 0.5*(x*x + y*y)*ni;
+    const xy = P => { const w = -(P | ni)[0]; return [P[1]/w, P[2]/w]; };
+    const place = (id, scene, update) => {
+      const host = document.getElementById(id);
+      if (host === null) return;
+      // pointRadius and fontSize scale ganja's dots and labels (default 1).
+      const g = this.graph(scene, { conformal: true, grid: true, scale: 0.85, pointRadius: 2, fontSize: 2, lineWidth: 2 });
+      g.style.width = "100%";
+      g.style.height = "360px";
+      g.style.display = "block";
+      host.appendChild(g);
+      g.addEventListener("input", update);
+      update();
+    };
+    const say = (id, text) => { const el = document.getElementById(id); if (el) el.textContent = text; };
+
+    // 1. Two reflections make a rotation.
+    const O = pt(0, 0), Pa = pt(1.3, 0.25), Pb = pt(0.75, 1.05), X = pt(1.15, -0.65);
+    const la = () => !(O ^ Pa ^ ni), lb = () => !(O ^ Pb ^ ni);
+    const X1 = () => la() * X * la();
+    const X2 = () => lb() * X1() * lb();
+    const RX = () => { const R = lb() * la(); return R * X * ~R; };
+    place("w-reflect", [
+      0xaaaaaa, () => O ^ Pa ^ ni, () => O ^ Pb ^ ni,
+      0x2462b8, Pa, "a", Pb, "b",
+      0x17202e, X, "X",
+      0xb95600, X1, "X′", X2, "X″"
+    ], () => {
+      const [ax, ay] = xy(Pa), [bx, by] = xy(Pb);
+      let t = (Math.atan2(by, bx) - Math.atan2(ay, ax)) * 180 / Math.PI;
+      t = ((t + 540) % 360) - 180;
+      const [x2, y2] = xy(X2()), [rx, ry] = xy(RX());
+      say("w-reflect-out", "Angle from a to b: " + t.toFixed(1) + "°, so the rotation is " + (2*t).toFixed(1)
+        + "°.  X″ and R X R̃ differ by " + Math.hypot(x2 - rx, y2 - ry).toExponential(1) + ".");
+    });
+
+    // 2. Distance as an inner product.
+    const A = pt(-0.9, -0.3), B = pt(0.8, 0.5);
+    place("w-distance", [
+      0x8888aa, [A, B],
+      0xb95600, () => !(A + (A | B)[0]*ni),
+      0x2462b8, A, "A", B, "B"
+    ], () => {
+      const [ax, ay] = xy(A), [bx, by] = xy(B);
+      const ip = (A | B)[0] / ((A | ni)[0] * (B | ni)[0]);
+      say("w-distance-out", "A·B = " + ip.toFixed(3) + ", so −2 A·B = " + (-2*ip).toFixed(3)
+        + ";  |AB|² from coordinates = " + ((ax - bx)*(ax - bx) + (ay - by)*(ay - by)).toFixed(3) + ".");
+    });
+
+    // 3. Join and meet.
+    const C1 = pt(-0.9, 0.3), C2 = pt(0.3, 0.95), C3 = pt(0.7, -0.6), D = pt(-1.7, -0.9), E = pt(1.7, 0.5);
+    const circle = () => C1 ^ C2 ^ C3, line = () => D ^ E ^ ni, T = () => circle() & line();
+    place("w-meet", [
+      0x999999, line,
+      0xb95600, circle,
+      0x7766cc, T,
+      0x2462b8, C1, "A", C2, "B", C3, "C",
+      0x444444, D, "D", E, "E"
+    ], () => {
+      const t2 = (T() * T())[0];
+      say("w-meet-out", t2 >= 0
+        ? "T·T = " + t2.toFixed(3) + " ≥ 0: a real point pair, the two intersections."
+        : "T·T = " + t2.toFixed(3) + " < 0: an imaginary pair; the line misses the circle.");
+    });
+  });
+</script>
+
+<script>
+  // Full screen for a demo: the browser's fullscreen on its frame, or an
+  // overlay filling the window where fullscreen is refused. Escape or Close
+  // ends the overlay.
+  (() => {
+    const closeOverlay = frame => {
+      frame.classList.remove("expanded");
+      frame.querySelector("button.close").hidden = true;
+      document.body.style.overflow = "";
+    };
+    const openOverlay = frame => {
+      frame.classList.add("expanded");
+      frame.querySelector("button.close").hidden = false;
+      document.body.style.overflow = "hidden";
+    };
+    document.querySelectorAll("figure.demo").forEach(fig => {
+      const frame = fig.querySelector(".frame");
+      fig.querySelector("button.expand").addEventListener("click", () => {
+        const request = frame.requestFullscreen ? frame.requestFullscreen() : null;
+        if (request && request.catch) request.catch(() => openOverlay(frame));
+        else if (request === null) openOverlay(frame);
+      });
+      frame.querySelector("button.close").addEventListener("click", () => closeOverlay(frame));
+    });
+    document.addEventListener("keydown", e => {
+      if (e.key !== "Escape") return;
+      document.querySelectorAll(".frame.expanded").forEach(closeOverlay);
+    });
+  })();
+
+  // Typeset .m (inline) and .md (display) LaTeX with KaTeX; without it, the
+  // LaTeX source stays visible.
+  (() => {
+    if (!window.katex) return;
+    document.querySelectorAll(".m, .md").forEach(el => {
+      try {
+        window.katex.render(el.textContent, el, { displayMode: el.classList.contains("md"), throwOnError: false });
+      } catch (e) { /* keep the source text */ }
+    });
+  })();
+</script>
+</body>
+</html>

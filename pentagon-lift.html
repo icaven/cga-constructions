@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<HEAD>
+  <META charset="utf-8">
+  <SCRIPT SRC="https://cdn.jsdelivr.net/npm/ganja.js@1.0.204/ganja.js"></SCRIPT>
+  <LINK rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+  <SCRIPT SRC="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></SCRIPT>
+  <SCRIPT SRC="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></SCRIPT>
+  <STYLE>
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      font-family: system-ui, sans-serif;
+      overflow: hidden;
+      background: #f0f0f0;
+    }
+
+    :root {
+      --ops-width: 450px;
+    }
+
+    #controls {
+      position: fixed;
+      left: 0;
+      right: 0;
+      top: 0;
+      z-index: 10;
+      padding: 10px 12px;
+      background: rgba(255,255,255,0.96);
+      border-bottom: 1px solid #ccc;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.12);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    #controls label {
+      display: inline-block;
+      margin: 3px 12px 3px 0;
+      white-space: nowrap;
+    }
+
+    #controls input[type="range"] {
+      width: 220px;
+      vertical-align: middle;
+    }
+
+    #controls .muted {
+      color: #666;
+      font-size: 12px;
+    }
+
+    #view {
+      position: fixed;
+      left: 0;
+      bottom: 0;
+      right: var(--ops-width);
+    }
+
+    #view canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    #ops {
+      position: fixed;
+      right: 0;
+      bottom: 0;
+      width: var(--ops-width);
+      box-sizing: border-box;
+      overflow-y: auto;
+      padding: 8px 10px;
+      background: #fafafa;
+      border-left: 1px solid #ccc;
+      font-size: clamp(11px, calc(var(--ops-width) / 30), 24px);
+    }
+
+    #ops .legend {
+      color: #555;
+      line-height: 1.5;
+      padding-bottom: 6px;
+      margin-bottom: 8px;
+      border-bottom: 1px solid #ddd;
+    }
+
+    #ops .step {
+      margin: 0 0 6px;
+      padding: 4px 6px;
+      border-left: 3px solid transparent;
+      color: #999;
+    }
+
+    #ops .step.current {
+      color: #222;
+      background: #fff3e6;
+      border-left-color: #E07000;
+    }
+
+    #ops .step h4 {
+      margin: 0 0 3px;
+      font: 600 1em system-ui, sans-serif;
+    }
+
+    #ops .ops-lines > div {
+      margin: 2px 0;
+      overflow-x: auto;
+      overflow-y: hidden;
+    }
+
+    #ops .katex {
+      font-size: 1.05em;
+    }
+
+    #ops .tex-fallback {
+      font: 0.95em/1.5 "DejaVu Sans Mono", Menlo, Consolas, monospace;
+      white-space: pre-wrap;
+    }
+
+    /* Embedded in another page (the explainer), the legend is shown there once
+       for all the constructions. */
+    .embedded #ops .legend {
+      display: none;
+    }
+  </STYLE>
+  <SCRIPT>
+    // ganja's HTML labels (htmlText) set left/top as bare numbers, which only
+    // quirks mode accepts; this page needs standards mode for KaTeX. So when a
+    // style object gets numeric left/top through Object.assign, add "px".
+    (() => {
+      const assign = Object.assign;
+      Object.assign = function (target, ...sources) {
+        if (typeof CSSStyleDeclaration !== "undefined" && target instanceof CSSStyleDeclaration) {
+          sources = sources.map(src => {
+            const out = {};
+            for (const k in src) {
+              out[k] = (typeof src[k] === "number" && (k === "left" || k === "top")) ? src[k] + "px" : src[k];
+            }
+            return out;
+          });
+        }
+        return assign.call(Object, target, ...sources);
+      };
+    })();
+  </SCRIPT>
+  <SCRIPT>
+    // Mark the page as embedded when it is shown inside a frame.
+    try {
+      if (window.self !== window.top) document.documentElement.classList.add("embedded");
+    } catch (e) {
+      document.documentElement.classList.add("embedded");
+    }
+  </SCRIPT>
+  <title>Pentagon by lifted spheres in CGA3d</title>
+</HEAD>
+<BODY>
+  <DIV id="controls">
+    <STRONG>CGA3d: the regular 5-gon from spheres cut by the plane Π₀, with a lifted sphere for the Carlyle circle</STRONG>
+    <BR>
+    <LABEL>
+      Step:
+      <INPUT id="step" type="range" min="0" max="5" value="5">
+      <SPAN id="stepValue">5</SPAN>
+    </LABEL>
+    <LABEL><INPUT id="showEarlier" type="checkbox" checked> show construction of earlier steps</LABEL>
+    <LABEL><INPUT id="showSpheres" type="checkbox" checked> show the current step's spheres</LABEL>
+    <LABEL><INPUT id="showLabels" type="checkbox" checked> show point labels</LABEL>
+    <LABEL><INPUT id="labelObjects" type="checkbox"> label spheres, lines, point pairs and radii of the current step</LABEL>
+    <DIV class="muted">
+      Drag to rotate, scroll to zoom. Π₀ is ganja's floor (y = 0), so heights point up.
+      Earlier steps show only each sphere's circle in Π₀.
+    </DIV>
+  </DIV>
+
+  <DIV id="view"></DIV>
+
+  <DIV id="ops">
+    <DIV class="legend">
+      <b>CGA3d operations</b> (ganja syntax in brackets)<br>
+      <span class="tex">\wedge</span> join (<code>^</code>) &nbsp;
+      <span class="tex">\vee</span> meet (<code>&amp;</code>) &nbsp;
+      <span class="tex">X^{*}</span> dual (<code>!X</code>) &nbsp;
+      <span class="tex">\cdot</span> inner product (<code>|</code>)<br>
+      Sphere centred at C with radius |P₁P₂|: <span class="tex">S = \big(C + (P_1\cdot P_2)\, n_\infty\big)^{*}</span>;
+      its circle in the plane is <span class="tex">S \vee \Pi_0</span>.<br>
+      A centre lifted by h gives the circle of radius <span class="tex">\sqrt{\rho^2 - h^2}</span>.<br>
+      <span class="tex">\operatorname{split}(T)</span>: the two points of a point pair, <span class="tex">(T \pm \sqrt{T\cdot T})\,(n_\infty \rfloor T)</span>;
+      <span class="tex">\operatorname{pt}(F)</span>: the point of a flat point.<br>
+      Names: <span class="tex">S_X(P)</span> sphere centred X through P, <span class="tex">S_X(\lvert PQ\rvert)</span> with radius |PQ|,
+      <span class="tex">K</span> circle of two spheres, <span class="tex">\beta</span> bisector plane, <span class="tex">L</span> line, <span class="tex">T</span> point pair.
+    </DIV>
+    <DIV id="opsSteps"></DIV>
+  </DIV>
+
+<SCRIPT>
+Algebra(4,1,()=>{
+
+  // ---------------------------------------------------------------------------
+  // CGA3d model
+  // ---------------------------------------------------------------------------
+  //
+  //   n∞ = e4 + e5,  no = 1/2(e5 - e4),  P(x,y,z) = no + x e1 + y e2 + z e3 + 1/2|p|² n∞
+  //
+  // The construction plane Π0 is ganja's floor y = 0, so heights are along e2
+  // and point up on screen. A point (u, v) of the 2D construction is placed at
+  // u e1 - v e3, so the polygon runs anticlockwise seen from above.
+  //
+  // Spheres, circles, lines and planes are kept in outer (OPNS) form, which
+  // ganja draws and the meet & expects. Inside Algebra(), ! is the dual (not
+  // logical not), so booleans are tested with === false.
+
+  const ni = 1e4 + 1e5;
+  const no = 0.5*(1e5 - 1e4);
+
+  const point3 = (x, y, z) => no + x*1e1 + y*1e2 + z*1e3 + 0.5*(x*x + y*y + z*z)*ni;
+  const normalize = P => P * (1 / -(P | ni)[0]);
+
+  // In-plane coordinates (u, v) and height h of a point.
+  const uOf = P => (normalize(P) | 1e1)[0];
+  const vOf = P => -(normalize(P) | 1e3)[0];
+  const hOf = P => (normalize(P) | 1e2)[0];
+
+  // ---------------------------------------------------------------------------
+  // Operation trace (as in the 2D example): helpers record their operation in
+  // LaTeX; a step's ops are those recorded between beginOps() and endOps().
+  // ---------------------------------------------------------------------------
+
+  const trace = { ops: null, names: new WeakMap(), pairs: 0 };
+  const tex = n => n.replace(/^([A-Za-z]+)(\d+)$/, "$1_{$2}").replace(/′/g, "'");
+  const nameOf = X => trace.names.get(X) || "?";
+  const named = (X, n) => {
+    if (n) trace.names.set(X, tex(n));
+    return X;
+  };
+  const record = s => {
+    if (trace.ops) trace.ops.push(s);
+  };
+  const beginOps = () => {
+    trace.ops = [];
+    trace.pairs = 0;
+  };
+  const endOps = () => {
+    const ops = trace.ops;
+    trace.ops = null;
+    return ops;
+  };
+
+  // ---------------------------------------------------------------------------
+  // Straightedge and compass in CGA3d
+  // ---------------------------------------------------------------------------
+
+  // The construction plane (given): y = 0, i.e. the dual vector e2.
+  const Pi0 = named(!(1e2), "\\Pi_0");
+  // Its normal vector (the vertical direction).
+  const up = !Pi0;
+
+  const given = (u, v, n) => {
+    record(tex(n) + " = P(" + u + ",\\, " + v + ") \\in \\Pi_0");
+    return named(point3(u, 0, -v), n);
+  };
+
+  // Straightedge: the line through A and B.
+  const lineThrough = (A, B, n) => {
+    const name = tex(n || ("L_{" + nameOf(A) + nameOf(B) + "}"));
+    record(name + " = " + nameOf(A) + " \\wedge " + nameOf(B) + " \\wedge n_\\infty");
+    return named(A ^ B ^ ni, name);
+  };
+
+  // The vertical line through P: P ∧ Π0* ∧ n∞.
+  const verticalThrough = (P, n) => {
+    const name = tex(n || ("L^{\\uparrow}_{" + nameOf(P) + "}"));
+    record(name + " = " + nameOf(P) + " \\wedge \\Pi_0^{*} \\wedge n_\\infty");
+    return named(P ^ up ^ ni, name);
+  };
+
+  // Compass in 3D: the sphere centred at C with radius |P1 P2|.
+  const sphere = (C, P1, P2, n) => {
+    const through = P1 === C;
+    const radius = "\\lvert " + nameOf(P1) + nameOf(P2) + "\\rvert";
+    const name = tex(n || ("S_{" + nameOf(C) + "}(" + (through ? nameOf(P2) : radius) + ")"));
+    record(name + " = \\big(" + nameOf(C) + " + (" + nameOf(P1) + " \\cdot " + nameOf(P2) + ")\\, n_\\infty\\big)^{*}"
+      + (through ? "" : "\\qquad \\text{radius } " + radius));
+    return named(!(C + (P1 | P2)[0]*ni), name);
+  };
+
+  // A sphere's circle in the plane (for drawing).
+  const cut = S => S & Pi0;
+
+  // Centre of a sphere S (outer form): with s = S* its dual vector, the
+  // centre is the sandwich s n∞ s (n∞ reflected in the sphere), as for the
+  // circle centres of the 2D example.
+  const centerOf = S => {
+    const s = !S;
+    return normalize(s * ni * s).Grade(1);
+  };
+
+  // Point pairs and their points.
+  const splitPointPair = T => {
+    const s2 = (T*T)[0];
+    if (s2 < -1E-10) return [];
+    const s = Math.sqrt(Math.max(0, s2));
+    const D = ni << T;
+    return [((T + s)*D).Grade(1), ((T - s)*D).Grade(1)].map(normalize);
+  };
+
+  const meetName = n => {
+    if (n === undefined) trace.pairs = trace.pairs + 1;
+    return tex(n || ("T_{" + trace.pairs + "}"));
+  };
+
+  // A line meeting a sphere: a point pair.
+  const intersect = (X, Y, n) => {
+    const name = meetName(n);
+    record(name + " = " + nameOf(X) + " \\vee " + nameOf(Y));
+    const pair = named(X & Y, name);
+    return { pair, points: splitPointPair(pair).map(P => named(P, "\\operatorname{split}(" + name + ")")) };
+  };
+
+  // Two spheres meeting in the plane: S1 ∨ S2 ∨ Π0, a point pair.
+  const intersectInPlane = (S1, S2, n) => {
+    const name = meetName(n);
+    record(name + " = " + nameOf(S1) + " \\vee " + nameOf(S2) + " \\vee \\Pi_0");
+    const pair = named((S1 & S2) & Pi0, name);
+    return { pair, points: splitPointPair(pair).map(P => named(P, "\\operatorname{split}(" + name + ")")) };
+  };
+
+  // The point of a flat point F = M ∧ n∞ (a line meeting a plane).
+  const flatPointToPoint = F => {
+    const Y = normalize(no << F);
+    return Y + 0.5*(Y | Y)[0]*ni;
+  };
+
+  // Classical bisection of AB with two spheres. S_A(B) and S_B(A) meet in a
+  // circle K whose carrier plane β = K ∧ n∞ is the perpendicular bisector
+  // plane; it cuts Π0 in the bisector line and line AB in the midpoint.
+  const bisect = (A, B, midName) => {
+    const ab = nameOf(A) + nameOf(B);
+    const spheres = [sphere(A, A, B), sphere(B, B, A)];
+    const K = named(spheres[0] & spheres[1], "K_{" + ab + "}");
+    record(nameOf(K) + " = " + nameOf(spheres[0]) + " \\vee " + nameOf(spheres[1]));
+    const beta = named(K ^ ni, "\\beta_{" + ab + "}");
+    record(nameOf(beta) + " = " + nameOf(K) + " \\wedge n_\\infty");
+    const line = named(beta & Pi0, "B_{" + ab + "}");
+    record(nameOf(line) + " = " + nameOf(beta) + " \\vee \\Pi_0");
+    const pairName = "T_{" + ab + "}";
+    record(pairName + " = " + nameOf(K) + " \\vee \\Pi_0");
+    const pair = named(K & Pi0, pairName);
+    let midpoint = null, segment = null;
+    if (midName) {
+      segment = lineThrough(A, B);
+      record(tex(midName) + " = \\operatorname{pt}(" + nameOf(segment) + " \\vee " + nameOf(beta) + ")");
+      midpoint = named(flatPointToPoint(segment & beta), midName);
+    }
+    return { spheres, pair, line, segment, midpoint };
+  };
+
+  // Choosing one point of a pair.
+  const choose = (points, by, n) => {
+    const [word, axis] = by.split(" ");
+    const f = axis === "u" ? uOf : axis === "v" ? vOf : hOf;
+    const larger = word === "larger" || word === "higher";
+    const P = points.reduce((a, b) => (larger ? f(b) > f(a) : f(b) < f(a)) ? b : a);
+    const what = axis === "h" ? "\\text{" + word + "}" : "\\text{" + word + " } " + axis;
+    if (n) record(tex(n) + " = " + nameOf(P) + "\\qquad " + what);
+    return named(P, n);
+  };
+
+  const fartherFrom = (points, P, n) => {
+    const X = points.reduce((a, b) => -(b | P)[0] > -(a | P)[0] ? b : a);
+    if (n) record(tex(n) + " = " + nameOf(X) + "\\qquad \\text{farther from } " + nameOf(P));
+    return named(X, n);
+  };
+
+  // The circle a sphere S makes in the plane through line L and O (for
+  // drawing a stand-up: it passes through both points of L ∨ S). Display only.
+  const origin = point3(0, 0, 0);
+  const lineCircle = (S, L) => S & (L ^ origin);
+
+  // Method 1: lift C by the in-plane length |P1 P2|. The vertical line
+  // through C meets the sphere centred at C with radius |P1 P2| in a pair
+  // symmetric in Π0; the higher point is C lifted by that length.
+  const lift = (C, P1, P2, n) => {
+    const vertical = verticalThrough(C);
+    const S = sphere(C, P1, P2);
+    const meet = intersect(vertical, S);
+    const lifted = choose(meet.points, "higher h", n);
+    return { vertical, sphere: S, pair: meet.pair, lifted, circle: lineCircle(S, vertical) };
+  };
+
+  // ---------------------------------------------------------------------------
+  // The 5-gon
+  // ---------------------------------------------------------------------------
+  //
+  // As in the 2D example, x² + x - 1 = 0 has the roots 2cos(2π/5) and
+  // 2cos(4π/5), and its Carlyle circle is centred at Q′ = (-1/2, 0) through
+  // A = (0, 1), with radius |Q′A| = √5/2.
+  //
+  // Here that circle is the cut of a lifted sphere. By Pythagoras
+  // |Q′A|² = |Q′V0|² - |OV0|² (9/4 - 1 = 5/4), so a sphere of radius
+  // ρ = |Q′V0| centred at Q′ lifted by h = |OV0| cuts Π0 in exactly the Carlyle
+  // circle. Both lengths are already in the plane, so the lift is method 1.
+
+  const construct = () => {
+    const steps = [];
+
+    // Step 0: the given plane, O and V0; the x-axis and the unit sphere.
+    beginOps();
+    record("\\Pi_0 = (e_2)^{*} \\qquad \\text{given plane}");
+    const O = given(0, 0, "O");
+    const V0 = given(1, 0, "V0");
+    const xAxis = lineThrough(O, V0, "L_x");
+    const Su = sphere(O, O, V0, "S_u");
+    const Qmeet = intersect(xAxis, Su);
+    const Q = choose(Qmeet.points, "smaller u", "Q");
+    steps.push({
+      title: "Given Π₀, O, V₀: the x-axis meets the unit sphere again at Q",
+      ops: endOps(),
+      spheres: [Su], lines: [xAxis], pairs: [Qmeet.pair], segments: [],
+      points: [{ p: O, label: "O" }, { p: V0, label: "V0" }, { p: Q, label: "Q" }]
+    });
+
+    // Step 1: bisect QV0 for the y-axis; it meets the unit sphere at A.
+    beginOps();
+    const bisQV0 = bisect(Q, V0);
+    const yAxis = named(bisQV0.line, "L_y");
+    const Ameet = intersect(yAxis, Su);
+    const A = choose(Ameet.points, "larger v", "A");
+    steps.push({
+      title: "Bisect QV₀ with two spheres: the bisector plane cuts Π₀ in the y-axis, which meets the unit sphere at A",
+      ops: endOps(),
+      spheres: bisQV0.spheres, lines: [yAxis], pairs: [bisQV0.pair, Ameet.pair], segments: [],
+      points: [{ p: A, label: "A" }]
+    });
+
+    // Step 2: bisect QO for Q′, the Carlyle centre for x² + x - 1 = 0.
+    beginOps();
+    const bisQO = bisect(Q, O, "Q′");
+    const Qp = bisQO.midpoint;
+    steps.push({
+      title: "Bisect QO: Q′ is the Carlyle center for x² + x − 1 = 0",
+      ops: endOps(),
+      spheres: bisQO.spheres, lines: [bisQO.line], pairs: [bisQO.pair], segments: [],
+      points: [{ p: Qp, label: "Q′" }]
+    });
+
+    // Step 3 (method 1): lift Q′ by the in-plane length |OV0|.
+    beginOps();
+    const L = lift(Qp, O, V0, "Q^{\\uparrow}");
+    record("h(Q^{\\uparrow}) = \\lvert OV_{0}\\rvert = 1");
+    steps.push({
+      title: "Method 1: stand |OV₀| up on the vertical line through Q′ to lift Q′ to Q↑",
+      ops: endOps(),
+      spheres: [L.sphere], circles: [L.circle], lines: [L.vertical], pairs: [L.pair], segments: [[O, V0], [Qp, L.lifted]],
+      points: [{ p: L.lifted, label: "Q↑" }]
+    });
+
+    // Step 4: the lifted sphere of radius |Q′V0| cuts Π0 in the Carlyle
+    // circle; the x-axis meets it at H = 2cos(2π/5) and H′.
+    beginOps();
+    const Kc = sphere(L.lifted, Qp, V0, "K_c");
+    record("\\text{radius of } K_c \\vee \\Pi_0: \\ \\lvert Q'V_{0}\\rvert^2 - \\lvert OV_{0}\\rvert^2 = \\tfrac94 - 1 = \\tfrac54 = \\lvert Q'A\\rvert^2");
+    const roots = intersect(xAxis, Kc);
+    const H = choose(roots.points, "larger u", "H");
+    const Hp = choose(roots.points, "smaller u", "H′");
+    steps.push({
+      title: "The sphere at Q↑ with radius |Q′V₀| cuts Π₀ in the Carlyle circle (through A): H = 2cos(2π/5)",
+      ops: endOps(),
+      spheres: [Kc], lines: [], pairs: [roots.pair], segments: [[Qp, V0]],
+      points: [{ p: H, label: "H" }, { p: Hp, label: "H′" }]
+    });
+
+    // Step 5: the sphere at H with radius |OV0| meets the unit sphere in Π0
+    // at V1 and V4; then rotor and compass stepping.
+    beginOps();
+    const SH = sphere(H, O, V0);
+    const Vmeet = intersectInPlane(Su, SH);
+    const V1 = choose(Vmeet.points, "larger v", "V1");
+    const V4 = choose(Vmeet.points, "smaller v", "V4");
+
+    // Rotor: reflections in the vertical plane through the x-axis, then in the
+    // bisector plane of V0 V1 (the vector V0 - V1).
+    const xPlane = named(xAxis ^ up, "\\Pi_x");
+    record("\\Pi_x = L_x \\wedge \\Pi_0^{*}");
+    record("R = (V_{0} - V_{1})\\, \\Pi_x^{*},\\qquad R \\leftarrow R / \\sqrt{R \\tilde R}");
+    const R0 = (V0 - V1) * !xPlane;
+    const R = R0 * (1 / Math.sqrt((R0 * ~R0)[0]));
+    const rotor = [V0];
+    for (let k = 1; k < 5; k++) rotor.push(R >>> rotor[k - 1]);
+    record("\\hat V_{k+1} = R\\, \\hat V_{k}\\, \\tilde R \\qquad k = 0, \\dots, 3");
+
+    // Compass stepping: spheres of radius |V0V1| at each vertex, in Π0.
+    const compass = [V0, V1], chordSpheres = [];
+    const chord = k => {
+      const S = sphere(compass[k], V0, V1);
+      const m = intersectInPlane(Su, S);
+      compass.push(fartherFrom(m.points, compass[k - 1], "V" + (k + 1)));
+      chordSpheres.push(S);
+    };
+    chord(1);
+    const recorded = trace.ops.length;
+    chord(2); chord(3);
+    trace.ops.length = recorded;
+    record("\\dots\\quad \\text{repeated for } V_{3},\\, V_{4}");
+
+    steps.push({
+      title: "The sphere at H with radius |OV₀| meets the unit sphere in Π₀ at V₁ and V₄; rotor and compass stepping",
+      ops: endOps(),
+      spheres: [SH], lines: [], pairs: [Vmeet.pair], segments: [[O, V0]],
+      points: [{ p: V1, label: "V1" }, { p: V4, label: "V4" }]
+    });
+
+    return { steps, Pi0, rotor, compass, chordSpheres };
+  };
+
+  const construction = construct();
+
+  // ---------------------------------------------------------------------------
+  // Rendering
+  // ---------------------------------------------------------------------------
+
+  const stepInput = document.getElementById("step");
+  const stepValue = document.getElementById("stepValue");
+  const showEarlierInput = document.getElementById("showEarlier");
+  const showSpheresInput = document.getElementById("showSpheres");
+  const showLabelsInput = document.getElementById("showLabels");
+  const labelObjectsInput = document.getElementById("labelObjects");
+  stepInput.max = String(construction.steps.length - 1);
+
+  const subscriptDigits = "₀₁₂₃₄₅₆₇₈₉";
+  const subscript = text => text.replace(/([A-Z][̂′]?)(\d+)/g,
+    (m, name, digits) => name + digits.split("").map(d => subscriptDigits[Number(d)]).join(""));
+
+  // Typeset LaTeX with KaTeX (the page has a doctype: KaTeX refuses quirks
+  // mode); without KaTeX, show the LaTeX source.
+  const renderTex = (src, el) => {
+    if (window.katex) {
+      try {
+        window.katex.render(src, el, { throwOnError: false });
+        return;
+      } catch (e) {
+        console.warn("KaTeX could not render:", e);
+      }
+    }
+    el.textContent = src;
+    el.classList.add("tex-fallback");
+  };
+  document.querySelectorAll("#ops .tex").forEach(el => renderTex(el.textContent, el));
+
+  const opsSteps = document.getElementById("opsSteps");
+  const renderOps = current => {
+    opsSteps.textContent = "";
+    let currentElement = null;
+    for (let i = 0; i <= current; i++) {
+      const s = construction.steps[i];
+      const div = document.createElement("div");
+      div.className = i === current ? "step current" : "step";
+      const h = document.createElement("h4");
+      h.textContent = "Step " + i + ": " + s.title;
+      const lines = document.createElement("div");
+      lines.className = "ops-lines";
+      s.ops.forEach(op => {
+        const line = document.createElement("div");
+        renderTex(op, line);
+        lines.appendChild(line);
+      });
+      div.appendChild(h);
+      div.appendChild(lines);
+      opsSteps.appendChild(div);
+      if (i === current) currentElement = div;
+    }
+    if (currentElement && currentElement.scrollIntoView) currentElement.scrollIntoView({ block: "nearest" });
+  };
+
+  // Optional labels for the current step's spheres, lines, point pairs and
+  // radii, with their recorded LaTeX names. ganja draws labels as HTML here
+  // (htmlText) and typesets \( ... \) with KaTeX's auto-render; it places a
+  // label at the middle of the last line segment drawn before it (slightly
+  // raised), so each label follows an invisible zero-length segment [P, P].
+  const texLabel = t => "\\(" + t + "\\)";
+
+  const origin3 = point3(0, 0, 0);
+  const at = (u, v, h) => point3(u, h, -v);
+  const xyz = P => [uOf(P), vOf(P), hOf(P)];
+
+  // Candidate label positions for each kind of object, in order of
+  // preference; objectLabels takes the first one clear of other labels.
+  // A sphere: four points 45° up the sphere, the top, then the equator.
+  const sphereCandidates = S => {
+    const c = centerOf(S), s = normalize(!S);
+    const r = Math.sqrt(Math.max(0, (s | s)[0]));
+    const [cu, cv, ch] = xyz(c), k = r * Math.SQRT1_2;
+    return [[k, 0, k], [-k, 0, k], [0, k, k], [0, -k, k], [0, 0, r],
+            [r, 0, 0], [-r, 0, 0], [0, r, 0], [0, -r, 0]].map(([du, dv, dh]) => at(cu + du, cv + dv, ch + dh));
+  };
+  // A line: both points where it meets spheres around O of growing radius.
+  const lineCandidates = L => {
+    const out = [];
+    for (const r of [1.5, 2.5, 4, 6]) {
+      const T = L & !(origin3 - 0.5*r*r*ni);
+      if ((T*T)[0] > 1E-9) out.push(...splitPointPair(T));
+    }
+    return out;
+  };
+  // A point pair: below or above either point, then to either side (its
+  // points often carry point labels, so keep clear of them).
+  const pairCandidates = T => {
+    const pts = splitPointPair(T).map(xyz);
+    const offsets = [[0, 0, -0.5], [0, 0, 0.5], [0.5, 0, 0], [-0.5, 0, 0], [0, 0.5, 0], [0, -0.5, 0]];
+    return offsets.flatMap(([du, dv, dh]) => pts.map(([u, v, h]) => at(u + du, v + dv, h + dh)));
+  };
+  // A radius segment: points along it (middle first), moved up, down or to
+  // the side (sideways matters for a vertical segment, such as Q′Q↑).
+  const segmentCandidates = ([A, B]) => {
+    const [a, b] = [xyz(A), xyz(B)];
+    const along = t => [0, 1, 2].map(i => a[i] + t*(b[i] - a[i]));
+    const offsets = [[0, 0, 0.2], [0, 0, -0.2], [0.3, 0, 0], [-0.3, 0, 0], [0, 0.3, 0], [0, -0.3, 0], [0, 0, 0.35], [0, 0, -0.35]];
+    const out = [];
+    for (const [du, dv, dh] of offsets)
+      for (const t of [0.5, 0.33, 0.67, 0.25, 0.75]) { const p = along(t); out.push(at(p[0] + du, p[1] + dv, p[2] + dh)); }
+    return out;
+  };
+
+  // Labels for the current step's objects. taken: positions already holding a
+  // label (the point labels shown); each object label takes its first
+  // candidate at least 0.4 from all of them, else the one farthest away, and
+  // then counts as taken itself.
+  const objectLabels = (s, taken) => {
+    const out = [];
+    const used = taken.map(xyz);
+    const clearance = P => Math.min(Infinity, ...used.map(q => Math.hypot(...xyz(P).map((x, i) => x - q[i]))));
+    const add = (color, candidates, text) => {
+      if (text.indexOf("?") >= 0 || candidates.length === 0) return;
+      let best = candidates.find(P => clearance(P) >= 0.4);
+      if (best === undefined) best = candidates.reduce((a, b) => clearance(b) > clearance(a) ? b : a);
+      used.push(xyz(best));
+      out.push(color, [best, best], text);
+    };
+    (s.spheres || []).forEach(S => add(0xB05A00, sphereCandidates(S), texLabel(nameOf(S))));
+    (s.lines || []).forEach(L => add(0x555555, lineCandidates(L), texLabel(nameOf(L))));
+    (s.pairs || []).forEach(T => add(0x6666AA, pairCandidates(T), texLabel(nameOf(T))));
+    (s.segments || []).forEach(seg => add(0xB05A00, segmentCandidates(seg),
+      texLabel("\\lvert " + nameOf(seg[0]) + nameOf(seg[1]) + "\\rvert")));
+    return out;
+  };
+
+  // The scene, rebuilt from the controls whenever ganja redraws. It refills
+  // one persistent list: ganja attaches its HTML label elements to that list
+  // (as properties _0, _1, ...), so a new list each frame would create new
+  // label elements every frame while dragging, leaving trails.
+  const sceneList = [];
+  const scene = () => {
+    const step = Number(stepInput.value);
+    const final = step === construction.steps.length - 1;
+    const out = sceneList;
+    out.length = 0;
+    const points = [];
+
+    for (let i = 0; i <= step; i++) {
+      const s = construction.steps[i];
+      const isCurrent = i === step;
+      if (isCurrent || showEarlierInput.checked) {
+        out.push(isCurrent ? 0xE07000 : 0xBBBBBB, ...s.spheres.map(cut));
+        out.push(0x999999, ...s.lines);
+        if (s.circles && s.circles.length) out.push(isCurrent ? 0xE07000 : 0xBBBBBB, ...s.circles);
+        out.push(0x7777CC, ...s.pairs);
+        if (s.segments.length) out.push(isCurrent ? 0xE07000 : 0xCCCCCC, ...s.segments);
+      }
+      s.points.forEach(q => points.push(q));
+    }
+
+    if (final) {
+      const n = construction.rotor.length;
+      out.push(0x2277DD, ...construction.rotor.map((p, k) => [p, construction.rotor[(k + 1) % n]]));
+    }
+
+    points.forEach(q => {
+      out.push(0x333333, q.p);
+      if (showLabelsInput.checked) out.push(subscript(q.label));
+    });
+
+    // Centres of the current step's spheres, in orange like their circles.
+    const currentSpheres = construction.steps[step].spheres;
+    if (currentSpheres.length) out.push(0xE07000, ...currentSpheres.map(centerOf));
+
+    if (labelObjectsInput.checked) {
+      const taken = showLabelsInput.checked ? points.filter(q => q.label).map(q => q.p) : [];
+      out.push(...objectLabels(construction.steps[step], taken));
+    }
+
+    // Transparent objects last: the plane, then the current step's spheres.
+    out.push(0xE0B0B0B0, construction.Pi0);
+    if (showSpheresInput.checked) out.push(0xD0F0A860, ...construction.steps[step].spheres);
+    return out;
+  };
+
+  const view = document.getElementById("view");
+  const placeView = () => {
+    view.style.top = document.getElementById("controls").offsetHeight + "px";
+    document.getElementById("ops").style.top = view.style.top;
+  };
+  placeView();
+
+  const graphOptions = { conformal: true, gl: true, grid: false, htmlText: true, h: 0.6, p: -0.45, z: 6 };
+  const canvas = this.graph(scene, graphOptions);
+  view.appendChild(canvas);
+
+  // ganja keeps one HTML label element per scene position (on the scene list,
+  // or on the canvas) and never removes them; clear them all before a redraw
+  // so labels of another step vanish.
+  const clearHtmlLabels = () => {
+    for (let i = 0; i < 4000; i++) {
+      [sceneList["_" + i], canvas["_" + i]].forEach(div => {
+        if (div) { div.innerHTML = ""; div.last = undefined; }
+      });
+    }
+  };
+
+  const redraw = () => {
+    clearHtmlLabels();
+    stepValue.textContent = stepInput.value;
+    renderOps(Number(stepInput.value));
+    canvas.update(scene);
+  };
+  [stepInput, showEarlierInput, showSpheresInput, showLabelsInput, labelObjectsInput].forEach(el => {
+    el.addEventListener("input", redraw);
+    el.addEventListener("change", redraw);
+  });
+  window.addEventListener("resize", () => { placeView(); canvas.update(scene); });
+  redraw();
+});
+</SCRIPT>
+</BODY>

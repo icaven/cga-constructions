@@ -1,0 +1,1086 @@
+<!DOCTYPE html>
+<HEAD>
+  <META charset="utf-8">
+  <SCRIPT SRC="https://cdn.jsdelivr.net/npm/ganja.js@1.0.204/ganja.js"></SCRIPT>
+  <LINK rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+  <SCRIPT SRC="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></SCRIPT>
+  <SCRIPT SRC="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></SCRIPT>
+  <STYLE>
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      font-family: system-ui, sans-serif;
+      overflow: hidden;
+      background: #f0f0f0;
+    }
+
+    :root {
+      --ops-width: 450px;
+    }
+
+    #controls {
+      position: fixed;
+      left: 0;
+      right: 0;
+      top: 0;
+      z-index: 10;
+      padding: 10px 12px;
+      background: rgba(255,255,255,0.96);
+      border-bottom: 1px solid #ccc;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.12);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    #controls label {
+      display: inline-block;
+      margin: 3px 12px 3px 0;
+      white-space: nowrap;
+    }
+
+    #controls input[type="range"] {
+      width: 220px;
+      vertical-align: middle;
+    }
+
+    #controls .muted {
+      color: #666;
+      font-size: 12px;
+    }
+
+    #view {
+      position: fixed;
+      left: 0;
+      bottom: 0;
+      right: var(--ops-width);
+    }
+
+    #view canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    #ops {
+      position: fixed;
+      right: 0;
+      bottom: 0;
+      width: var(--ops-width);
+      box-sizing: border-box;
+      overflow-y: auto;
+      padding: 8px 10px;
+      background: #fafafa;
+      border-left: 1px solid #ccc;
+      font-size: clamp(11px, calc(var(--ops-width) / 30), 24px);
+    }
+
+    #ops .legend {
+      color: #555;
+      line-height: 1.5;
+      padding-bottom: 6px;
+      margin-bottom: 8px;
+      border-bottom: 1px solid #ddd;
+    }
+
+    #ops .step {
+      margin: 0 0 6px;
+      padding: 4px 6px;
+      border-left: 3px solid transparent;
+      color: #999;
+    }
+
+    #ops .step.current {
+      color: #222;
+      background: #fff3e6;
+      border-left-color: #E07000;
+    }
+
+    #ops .step h4 {
+      margin: 0 0 3px;
+      font: 600 1em system-ui, sans-serif;
+    }
+
+    #ops .ops-lines > div {
+      margin: 2px 0;
+      overflow-x: auto;
+      overflow-y: hidden;
+    }
+
+    #ops .katex {
+      font-size: 1.05em;
+    }
+
+    #ops .tex-fallback {
+      font: 0.95em/1.5 "DejaVu Sans Mono", Menlo, Consolas, monospace;
+      white-space: pre-wrap;
+    }
+
+    /* Embedded in another page (the explainer), the legend is shown there once
+       for all the constructions. */
+    .embedded #ops .legend {
+      display: none;
+    }
+  </STYLE>
+  <SCRIPT>
+    // ganja's HTML labels (htmlText) set left/top as bare numbers, which only
+    // quirks mode accepts; this page needs standards mode for KaTeX. So when a
+    // style object gets numeric left/top through Object.assign, add "px".
+    (() => {
+      const assign = Object.assign;
+      Object.assign = function (target, ...sources) {
+        if (typeof CSSStyleDeclaration !== "undefined" && target instanceof CSSStyleDeclaration) {
+          sources = sources.map(src => {
+            const out = {};
+            for (const k in src) {
+              out[k] = (typeof src[k] === "number" && (k === "left" || k === "top")) ? src[k] + "px" : src[k];
+            }
+            return out;
+          });
+        }
+        return assign.call(Object, target, ...sources);
+      };
+    })();
+  </SCRIPT>
+  <SCRIPT>
+    // Mark the page as embedded when it is shown inside a frame.
+    try {
+      if (window.self !== window.top) document.documentElement.classList.add("embedded");
+    } catch (e) {
+      document.documentElement.classList.add("embedded");
+    }
+  </SCRIPT>
+  <title>Platonic Solids in CGA3d</title>
+</HEAD>
+<BODY>
+  <DIV id="controls">
+    <STRONG>CGA3d: the five Platonic solids in the unit sphere (Euclid XIII), from stood-up lengths and the golden ratio of the pentagon construction</STRONG>
+    <BR>
+    <LABEL>
+      Step:
+      <INPUT id="step" type="range" min="0" max="11" value="11">
+      <SPAN id="stepValue">11</SPAN>
+    </LABEL>
+    <LABEL><INPUT id="showEarlier" type="checkbox" checked> show construction of earlier steps</LABEL>
+    <LABEL>
+      Current step's spheres:
+      <SELECT id="sphereMode">
+        <OPTION value="spheres" selected>spheres</OPTION>
+        <OPTION value="meets">intersection circles</OPTION>
+        <OPTION value="none">hidden</OPTION>
+      </SELECT>
+    </LABEL>
+    <LABEL><INPUT id="showLabels" type="checkbox" checked> show point labels</LABEL>
+    <LABEL><INPUT id="labelObjects" type="checkbox"> label spheres, lines, point pairs and radii of the current step</LABEL>
+    <LABEL><INPUT id="showFaces" type="checkbox" checked> shade faces</LABEL>
+    <LABEL>
+      Solid:
+      <SELECT id="solid">
+        <OPTION value="tetrahedron">tetrahedron</OPTION>
+        <OPTION value="octahedron">octahedron</OPTION>
+        <OPTION value="cube">cube</OPTION>
+        <OPTION value="icosahedron" selected>icosahedron</OPTION>
+        <OPTION value="dodecahedron">dodecahedron</OPTION>
+      </SELECT>
+    </LABEL>
+    <LABEL>
+      Vertical lines:
+      <SELECT id="verticalMethod">
+        <OPTION value="algebraic" selected>algebraic: G ∧ Π₀* ∧ n∞</OPTION>
+        <OPTION value="planes">two bisector planes (Euclid XI.11–12)</OPTION>
+        <OPTION value="spheres">three spheres (trilateration)</OPTION>
+      </SELECT>
+    </LABEL>
+    <DIV class="muted">
+      Drag to rotate, scroll to zoom. Π₀ is ganja's floor (y = 0), so heights point up.
+      Earlier steps show only each sphere's circle in Π₀.
+    </DIV>
+  </DIV>
+
+  <DIV id="view"></DIV>
+
+  <DIV id="ops">
+    <DIV class="legend">
+      <b>CGA3d operations</b> (ganja syntax in brackets)<br>
+      <span class="tex">\wedge</span> join (<code>^</code>) &nbsp;
+      <span class="tex">\vee</span> meet (<code>&amp;</code>) &nbsp;
+      <span class="tex">X^{*}</span> dual (<code>!X</code>) &nbsp;
+      <span class="tex">\cdot</span> inner product (<code>|</code>)<br>
+      Sphere centred at C with radius |P₁P₂|: <span class="tex">S = \big(C + (P_1\cdot P_2)\, n_\infty\big)^{*}</span>;
+      its circle in the plane is <span class="tex">S \vee \Pi_0</span>.<br>
+      A centre lifted by h gives the circle of radius <span class="tex">\sqrt{\rho^2 - h^2}</span>.<br>
+      <span class="tex">\operatorname{split}(T)</span>: the two points of a point pair, <span class="tex">(T \pm \sqrt{T\cdot T})\,(n_\infty \rfloor T)</span>;
+      <span class="tex">\operatorname{pt}(F)</span>: the point of a flat point.<br>
+      Names: <span class="tex">S_X(P)</span> sphere centred X through P, <span class="tex">S_X(\lvert PQ\rvert)</span> with radius |PQ|,
+      <span class="tex">K</span> circle of two spheres, <span class="tex">\beta</span> bisector plane, <span class="tex">L</span> line, <span class="tex">T</span> point pair.
+    </DIV>
+    <DIV id="opsSteps"></DIV>
+  </DIV>
+
+<SCRIPT>
+Algebra(4,1,()=>{
+
+  // ---------------------------------------------------------------------------
+  // CGA3d model
+  // ---------------------------------------------------------------------------
+  //
+  //   n∞ = e4 + e5,  no = 1/2(e5 - e4),  P(x,y,z) = no + x e1 + y e2 + z e3 + 1/2|p|² n∞
+  //
+  // The construction plane Π0 is ganja's floor y = 0, so heights are along e2
+  // and point up on screen. A point (u, v) of the 2D construction is placed at
+  // u e1 - v e3, so the polygon runs anticlockwise seen from above.
+  //
+  // Spheres, circles, lines and planes are kept in outer (OPNS) form, which
+  // ganja draws and the meet & expects. Inside Algebra(), ! is the dual (not
+  // logical not), so booleans are tested with === false.
+
+  const ni = 1e4 + 1e5;
+  const no = 0.5*(1e5 - 1e4);
+
+  const point3 = (x, y, z) => no + x*1e1 + y*1e2 + z*1e3 + 0.5*(x*x + y*y + z*z)*ni;
+  const normalize = P => P * (1 / -(P | ni)[0]);
+
+  // In-plane coordinates (u, v) and height h of a point.
+  const uOf = P => (normalize(P) | 1e1)[0];
+  const vOf = P => -(normalize(P) | 1e3)[0];
+  const hOf = P => (normalize(P) | 1e2)[0];
+
+  // ---------------------------------------------------------------------------
+  // Operation trace (as in the 2D example): helpers record their operation in
+  // LaTeX; a step's ops are those recorded between beginOps() and endOps().
+  // ---------------------------------------------------------------------------
+
+  const trace = { ops: null, names: new WeakMap(), pairs: 0 };
+  const tex = n => n.replace(/^([A-Za-z]+)(\d+)$/, "$1_{$2}").replace(/′/g, "'");
+  const nameOf = X => trace.names.get(X) || "?";
+  const named = (X, n) => {
+    if (n) trace.names.set(X, tex(n));
+    return X;
+  };
+  const record = s => {
+    if (trace.ops) trace.ops.push(s);
+  };
+  const beginOps = () => {
+    trace.ops = [];
+    trace.pairs = 0;
+  };
+  const endOps = () => {
+    const ops = trace.ops;
+    trace.ops = null;
+    return ops;
+  };
+
+  // ---------------------------------------------------------------------------
+  // Straightedge and compass in CGA3d
+  // ---------------------------------------------------------------------------
+
+  // The construction plane (given): y = 0, i.e. the dual vector e2.
+  const Pi0 = named(!(1e2), "\\Pi_0");
+  // Its normal vector (the vertical direction).
+  const up = !Pi0;
+
+  const given = (u, v, n) => {
+    record(tex(n) + " = P(" + u + ",\\, " + v + ") \\in \\Pi_0");
+    return named(point3(u, 0, -v), n);
+  };
+
+  // Straightedge: the line through A and B.
+  const lineThrough = (A, B, n) => {
+    const name = tex(n || ("L_{" + nameOf(A) + nameOf(B) + "}"));
+    record(name + " = " + nameOf(A) + " \\wedge " + nameOf(B) + " \\wedge n_\\infty");
+    return named(A ^ B ^ ni, name);
+  };
+
+  // The vertical line through P: P ∧ Π0* ∧ n∞.
+  const verticalThrough = (P, n) => {
+    const name = tex(n || ("L^{\\uparrow}_{" + nameOf(P) + "}"));
+    record(name + " = " + nameOf(P) + " \\wedge \\Pi_0^{*} \\wedge n_\\infty");
+    return named(P ^ up ^ ni, name);
+  };
+
+  // Compass in 3D: the sphere centred at C with radius |P1 P2|.
+  const sphere = (C, P1, P2, n) => {
+    const through = P1 === C;
+    const radius = "\\lvert " + nameOf(P1) + nameOf(P2) + "\\rvert";
+    const name = tex(n || ("S_{" + nameOf(C) + "}(" + (through ? nameOf(P2) : radius) + ")"));
+    record(name + " = \\big(" + nameOf(C) + " + (" + nameOf(P1) + " \\cdot " + nameOf(P2) + ")\\, n_\\infty\\big)^{*}"
+      + (through ? "" : "\\qquad \\text{radius } " + radius));
+    return named(!(C + (P1 | P2)[0]*ni), name);
+  };
+
+  // A sphere's circle in the plane (for drawing).
+  const cut = S => S & Pi0;
+
+  // Centre of a sphere S (outer form): with s = S* its dual vector, the
+  // centre is the sandwich s n∞ s (n∞ reflected in the sphere), as for the
+  // circle centres of the 2D example.
+  const centerOf = S => {
+    const s = !S;
+    return normalize(s * ni * s).Grade(1);
+  };
+
+  // Point pairs and their points.
+  const splitPointPair = T => {
+    const s2 = (T*T)[0];
+    if (s2 < -1E-10) return [];
+    const s = Math.sqrt(Math.max(0, s2));
+    const D = ni << T;
+    return [((T + s)*D).Grade(1), ((T - s)*D).Grade(1)].map(normalize);
+  };
+
+  const meetName = n => {
+    if (n === undefined) trace.pairs = trace.pairs + 1;
+    return tex(n || ("T_{" + trace.pairs + "}"));
+  };
+
+  // A line meeting a sphere: a point pair.
+  const intersect = (X, Y, n) => {
+    const name = meetName(n);
+    record(name + " = " + nameOf(X) + " \\vee " + nameOf(Y));
+    const pair = named(X & Y, name);
+    return { pair, points: splitPointPair(pair).map(P => named(P, "\\operatorname{split}(" + name + ")")) };
+  };
+
+  // Two spheres meeting in the plane: S1 ∨ S2 ∨ Π0, a point pair.
+  // Three spheres meeting: S1 ∨ S2 ∨ S3, a point pair.
+  const intersect3 = (S1, S2, S3, n) => {
+    const name = meetName(n);
+    record(name + " = " + nameOf(S1) + " \\vee " + nameOf(S2) + " \\vee " + nameOf(S3));
+    return named((S1 & S2) & S3, name);
+  };
+
+  const intersectInPlane = (S1, S2, n) => {
+    const name = meetName(n);
+    record(name + " = " + nameOf(S1) + " \\vee " + nameOf(S2) + " \\vee \\Pi_0");
+    const pair = named((S1 & S2) & Pi0, name);
+    return { pair, points: splitPointPair(pair).map(P => named(P, "\\operatorname{split}(" + name + ")")) };
+  };
+
+  // The point of a flat point F = M ∧ n∞ (a line meeting a plane).
+  const flatPointToPoint = F => {
+    const Y = normalize(no << F);
+    return Y + 0.5*(Y | Y)[0]*ni;
+  };
+
+  // Classical bisection of AB with two spheres. S_A(B) and S_B(A) meet in a
+  // circle K whose carrier plane β = K ∧ n∞ is the perpendicular bisector
+  // plane; it cuts Π0 in the bisector line and line AB in the midpoint.
+  const bisect = (A, B, midName) => {
+    const ab = nameOf(A) + nameOf(B);
+    const spheres = [sphere(A, A, B), sphere(B, B, A)];
+    const K = named(spheres[0] & spheres[1], "K_{" + ab + "}");
+    record(nameOf(K) + " = " + nameOf(spheres[0]) + " \\vee " + nameOf(spheres[1]));
+    const beta = named(K ^ ni, "\\beta_{" + ab + "}");
+    record(nameOf(beta) + " = " + nameOf(K) + " \\wedge n_\\infty");
+    const line = named(beta & Pi0, "B_{" + ab + "}");
+    record(nameOf(line) + " = " + nameOf(beta) + " \\vee \\Pi_0");
+    const pairName = "T_{" + ab + "}";
+    record(pairName + " = " + nameOf(K) + " \\vee \\Pi_0");
+    const pair = named(K & Pi0, pairName);
+    let midpoint = null, segment = null;
+    if (midName) {
+      segment = lineThrough(A, B);
+      record(tex(midName) + " = \\operatorname{pt}(" + nameOf(segment) + " \\vee " + nameOf(beta) + ")");
+      midpoint = named(flatPointToPoint(segment & beta), midName);
+    }
+    return { spheres, K, pair, beta, line, segment, midpoint };
+  };
+
+  // Choosing one point of a pair.
+  const choose = (points, by, n) => {
+    const [word, axis] = by.split(" ");
+    const f = axis === "u" ? uOf : axis === "v" ? vOf : hOf;
+    const larger = word === "larger" || word === "higher";
+    const P = points.reduce((a, b) => (larger ? f(b) > f(a) : f(b) < f(a)) ? b : a);
+    const what = axis === "h" ? "\\text{" + word + "}" : "\\text{" + word + " } " + axis;
+    if (n) record(tex(n) + " = " + nameOf(P) + "\\qquad " + what);
+    return named(P, n);
+  };
+
+  const nearerTo = (points, P, n) => {
+    const X = points.reduce((a, b) => -(b | P)[0] < -(a | P)[0] ? b : a);
+    if (n) record(tex(n) + " = " + nameOf(X) + "\\qquad \\text{nearer to } " + nameOf(P));
+    return named(X, n);
+  };
+
+  const fartherFrom = (points, P, n) => {
+    const X = points.reduce((a, b) => -(b | P)[0] > -(a | P)[0] ? b : a);
+    if (n) record(tex(n) + " = " + nameOf(X) + "\\qquad \\text{farther from } " + nameOf(P));
+    return named(X, n);
+  };
+
+  // The circle a sphere S makes in the plane through line L and O (for
+  // drawing a stand-up: it passes through both points of L ∨ S). Display only.
+  const origin = point3(0, 0, 0);
+  const lineCircle = (S, L) => S & (L ^ origin);
+
+  // Method 1: lift C by the in-plane length |P1 P2|. The vertical line
+  // through C meets the sphere centred at C with radius |P1 P2| in a pair
+  // symmetric in Π0; the higher point is C lifted by that length.
+  const lift = (C, P1, P2, n, prebuilt) => {
+    const vertical = prebuilt || verticalThrough(C);
+    const S = sphere(C, P1, P2);
+    const meet = intersect(vertical, S);
+    const lifted = choose(meet.points, "higher h", n);
+    return { vertical, sphere: S, pair: meet.pair, lifted, circle: lineCircle(S, vertical) };
+  };
+
+  // ---------------------------------------------------------------------------
+  // The Platonic solids (Euclid XIII.13-17, route 1)
+  // ---------------------------------------------------------------------------
+  //
+  // Every vertex comes from "standing up" a length on a line (method 1): the
+  // line meets a sphere centred on it, and the point pair gives both signs.
+  // In the floor coordinates (u, v, height h), before scaling:
+  //
+  //   octahedron    (±1, 0, 0), (0, ±1, 0), (0, 0, ±1)
+  //   cube          (±1, ±1, ±1)
+  //   tetrahedron   alternate vertices of the cube
+  //   icosahedron   cyclic permutations of (0, ±1, ±φ)
+  //   dodecahedron  (±1, ±1, ±1) and cyclic permutations of (0, ±1/φ, ±φ)
+  //
+  // φ comes from the pentagon construction: the Carlyle circle for
+  // x² + x - 1 = 0 meets the x-axis at H = 1/φ and H′ = -φ.
+
+  // Stand up the length |P1 P2| on line L at its point C: both points.
+  const standUp = (L, C, P1, P2, names, by) => {
+    const S = sphere(C, P1, P2);
+    const meet = intersect(L, S);
+    const a = choose(meet.points, (by === "h" ? "higher" : "larger") + " " + by, names[0]);
+    const b = choose(meet.points, (by === "h" ? "lower" : "smaller") + " " + by, names[1]);
+    // A vertical stand-up's meet is off the floor, so also give the circle in
+    // the vertical plane through L and O; along a line in the floor, the
+    // floor circle already shows it.
+    return { sphere: S, pair: meet.pair, points: [a, b], circle: by === "h" ? lineCircle(S, L) : null };
+  };
+
+  const solidNames = {
+    tetrahedron: "tetrahedron", octahedron: "octahedron", cube: "cube",
+    icosahedron: "icosahedron", dodecahedron: "dodecahedron"
+  };
+
+  const construct = (method, solid) => {
+    const steps = [];
+    let vertexCount = 0;
+    const nextI = () => { vertexCount = vertexCount + 1; return "I" + vertexCount; };
+
+    // The vertical line through a point C of Π0, by the chosen method, in two
+    // steps of its own (at most three spheres each). floorLine is a line of
+    // Π0 through C and along is the coordinate (u or v) that varies along it.
+    // Both geometric methods start from the circle of radius |OV0| around C.
+    // "meets" are the circles where a step's spheres cross, for drawing.
+    const verticalAt = (C, floorLine, along, label) => {
+      const across = along === "u" ? "v" : "u";
+      const c = nameOf(C);
+      const D = k => "D^{" + c + "}_{" + k + "}";
+      const vname = "L^{\\uparrow}_{" + c + "}";
+
+      beginOps();
+      const Sc = sphere(C, O, V0);
+      const m1 = intersect(floorLine, Sc);
+      const D1 = choose(m1.points, "smaller " + along, D(1));
+      const D2 = choose(m1.points, "larger " + along, D(2));
+
+      if (method === "planes") {
+        // Euclid XI.11-12. (1) The bisector plane β1 of D1 D2 is the vertical
+        // plane across the floor line at C. (2) It cuts Π0 in the
+        // perpendicular at C, which meets the circle at D3, D4; their bisector
+        // plane β2 is the vertical plane along the floor line; β1 ∨ β2 is the
+        // vertical line.
+        const b1 = bisect(D1, D2);
+        steps.push({
+          title: "Vertical through " + label + " by bisector planes (1/2): the circle of radius |OV₀| meets the floor line at D₁, D₂; their bisector plane β₁ is vertical",
+          ops: endOps(),
+          spheres: [Sc, ...b1.spheres], meets: [b1.K], circles: [], lines: [b1.line],
+          pairs: [m1.pair, b1.pair], segments: [], points: [{ p: D1 }, { p: D2 }]
+        });
+        beginOps();
+        const m2 = intersect(b1.line, Sc);
+        const D3 = choose(m2.points, "larger " + across, D(3));
+        const D4 = choose(m2.points, "smaller " + across, D(4));
+        const b2 = bisect(D3, D4);
+        record(vname + " = " + nameOf(b1.beta) + " \\vee " + nameOf(b2.beta));
+        const line = named(b1.beta & b2.beta, vname);
+        steps.push({
+          title: "Vertical through " + label + " by bisector planes (2/2): β₁ ∨ Π₀ meets the circle at D₃, D₄; their bisector plane β₂; the vertical is β₁ ∨ β₂",
+          ops: endOps(),
+          spheres: [Sc, ...b2.spheres], meets: [b2.K], circles: [], lines: [b1.line, line],
+          pairs: [m2.pair, b2.pair], segments: [], points: [{ p: D3 }, { p: D4 }]
+        });
+        return line;
+      }
+
+      // Trilateration. (1) D1, D2, D3 on the circle of radius 1 around C.
+      // (2) Spheres of equal radius |D1 D2| around them meet in a point pair on
+      // that circle's axis, the vertical through C.
+      const S2 = sphere(D2, D2, C);
+      const m3 = intersectInPlane(Sc, S2);
+      const D3 = choose(m3.points, "larger " + across, D(3));
+      steps.push({
+        title: "Vertical through " + label + " by three spheres (1/2): D₁, D₂, D₃ on the circle of radius |OV₀| around " + label,
+        ops: endOps(),
+        spheres: [Sc, S2], meets: [], circles: [], lines: [],
+        pairs: [m1.pair, m3.pair], segments: [], points: [{ p: D1 }, { p: D2 }, { p: D3 }]
+      });
+      beginOps();
+      const s1 = sphere(D1, D1, D2), s2 = sphere(D2, D1, D2), s3 = sphere(D3, D1, D2);
+      const T = intersect3(s1, s2, s3, "T^{\\uparrow}_{" + c + "}");
+      record(vname + " = " + nameOf(T) + " \\wedge n_\\infty");
+      const line = named(T ^ ni, vname);
+      steps.push({
+        title: "Vertical through " + label + " by three spheres (2/2): spheres of radius |D₁D₂| around D₁, D₂, D₃ meet in a pair T↑ on the vertical, which is T↑ ∧ n∞",
+        ops: endOps(),
+        spheres: [s1, s2, s3], meets: [s1 & s2, s2 & s3], circles: [], lines: [line],
+        pairs: [T], segments: [], points: [{ p: D1 }, { p: D2 }, { p: D3 }]
+      });
+      return line;
+    };
+
+    // For the geometric methods, build each vertical in steps of its own and
+    // return the lines; for the algebraic one return null, and the step that
+    // uses them builds them itself (so its ops list them).
+    const verticals = bases => method === "algebraic" ? null
+      : bases.map(([C, floorLine, along, label]) => verticalAt(C, floorLine, along, label));
+
+    // A step of stand-ups. items: [line, point C, P1, P2, by]; the stood-up
+    // points become vertices I_k (or get the given names).
+    const stand = (title, items, segment, names) => {
+      const results = items.map(([L, C, P1, P2, by], k) =>
+        standUp(L, C, P1, P2, names ? names[k] : [nextI(), nextI()], by));
+      const points = results.flatMap(r => r.points);
+      const circles = results.map(r => r.circle).filter(c => c);
+      steps.push({
+        title,
+        ops: endOps(),
+        spheres: results.map(r => r.sphere), meets: circles, circles,
+        lines: items.map(it => it[0]), pairs: results.map(r => r.pair), segments: [segment],
+        points: points.map(p => ({ p, label: nameOf(p).replace(/[_{}]/g, "").replace(/'/g, "′") }))
+      });
+      return points;
+    };
+
+    // Stand |P1 P2| up on the vertical lines through the given points.
+    // bases: [point, floor line, along, label].
+    const verticalStand = (title, bases, P1, P2) => {
+      const pre = verticals(bases);
+      beginOps();
+      const lines = pre || bases.map(([C]) => verticalThrough(C));
+      return stand(title, bases.map(([C], k) => [lines[k], C, P1, P2, "h"]), [P1, P2]);
+    };
+
+    // Perpendiculars to the x-axis at points P of it (Euclid I.11): the
+    // sphere at P through O meets the x-axis again at E (2P); the bisector of
+    // OE is the perpendicular at P. items: [P, E's name].
+    const perpendiculars = (title, items) => {
+      beginOps();
+      const built = items.map(([P, eName]) => {
+        const m = intersect(xAxis, sphere(P, P, O));
+        const E = fartherFrom(m.points, O, eName);
+        return { E, eName, pair: m.pair, b: bisect(O, E) };
+      });
+      steps.push({
+        title,
+        ops: endOps(),
+        spheres: built.flatMap(x => x.b.spheres), meets: built.map(x => x.b.K), lines: built.map(x => x.b.line),
+        pairs: built.flatMap(x => [x.pair, x.b.pair]), segments: [],
+        points: built.map(x => ({ p: x.E, label: x.eName }))
+      });
+      return built.map(x => x.b.line);
+    };
+
+    // Step 0: the given plane, O and V0; the x-axis and the unit sphere.
+    beginOps();
+    record("\\Pi_0 = (e_2)^{*} \\qquad \\text{given plane}");
+    const O = given(0, 0, "O");
+    const V0 = given(1, 0, "V0");
+    const xAxis = lineThrough(O, V0, "L_x");
+    const Su = sphere(O, O, V0, "S_u");
+    const Qmeet = intersect(xAxis, Su);
+    const Q = choose(Qmeet.points, "smaller u", "Q");
+    steps.push({
+      title: "Given Π₀, O, V₀: the x-axis meets the unit sphere again at Q",
+      ops: endOps(),
+      spheres: [Su], lines: [xAxis], pairs: [Qmeet.pair], segments: [],
+      points: [{ p: O, label: "O" }, { p: V0, label: "V0" }, { p: Q, label: "Q" }]
+    });
+
+    // Step 1: bisect QV0 for the y-axis; it meets the unit sphere at A and A′.
+    beginOps();
+    const bisQV0 = bisect(Q, V0);
+    const yAxis = named(bisQV0.line, "L_y");
+    const Ameet = intersect(yAxis, Su);
+    const A = choose(Ameet.points, "larger v", "A");
+    const Ap = choose(Ameet.points, "smaller v", "A′");
+    steps.push({
+      title: "Bisect QV₀ with two spheres: the y-axis meets the unit sphere at A and A′",
+      ops: endOps(),
+      spheres: bisQV0.spheres, meets: [bisQV0.K], lines: [yAxis], pairs: [bisQV0.pair, Ameet.pair], segments: [],
+      points: [{ p: A, label: "A" }, { p: Ap, label: "A′" }]
+    });
+
+    // The golden ratio: the pentagon's Carlyle circle from a lifted sphere
+    // gives H = 1/φ and H′ = -φ; the sphere at O through H′ gives G = (φ, 0).
+    const golden = () => {
+      beginOps();
+      const bisQO = bisect(Q, O, "Q′");
+      const Qp = bisQO.midpoint;
+      steps.push({
+        title: "Bisect QO: Q′ is the Carlyle center for x² + x − 1 = 0",
+        ops: endOps(),
+        spheres: bisQO.spheres, meets: [bisQO.K], lines: [bisQO.line], pairs: [bisQO.pair], segments: [],
+        points: [{ p: Qp, label: "Q′" }]
+      });
+
+      const preQ = verticals([[Qp, xAxis, "u", "Q′"]]);
+      beginOps();
+      const L = lift(Qp, O, V0, "Q^{\\uparrow}", preQ && preQ[0]);
+      steps.push({
+        title: "Method 1: stand |OV₀| up on the vertical line through Q′ to lift Q′ to Q↑",
+        ops: endOps(),
+        spheres: [L.sphere], meets: [L.circle], circles: [L.circle], lines: [L.vertical], pairs: [L.pair], segments: [[O, V0], [Qp, L.lifted]],
+        points: [{ p: L.lifted, label: "Q↑" }]
+      });
+
+      beginOps();
+      const Kc = sphere(L.lifted, Qp, V0, "K_c");
+      record("\\text{radius of } K_c \\vee \\Pi_0: \\ \\lvert Q'V_{0}\\rvert^2 - \\lvert OV_{0}\\rvert^2 = \\tfrac54 = \\lvert Q'A\\rvert^2");
+      const roots = intersect(xAxis, Kc);
+      const H = choose(roots.points, "larger u", "H");
+      const Hp = choose(roots.points, "smaller u", "H′");
+      record("\\lvert OH'\\rvert = \\varphi = \\tfrac{1+\\sqrt5}{2},\\qquad \\lvert OH\\rvert = 1/\\varphi");
+      steps.push({
+        title: "The lifted sphere's circle in Π₀ is the Carlyle circle: |OH′| = φ (the golden ratio), |OH| = 1/φ",
+        ops: endOps(),
+        spheres: [Kc], lines: [], pairs: [roots.pair], segments: [[Qp, V0]],
+        points: [{ p: H, label: "H" }, { p: Hp, label: "H′" }]
+      });
+
+      beginOps();
+      const Sphi = sphere(O, O, Hp);
+      const Gmeet = intersect(xAxis, Sphi);
+      const G = choose(Gmeet.points, "larger u", "G");
+      steps.push({
+        title: "The sphere at O through H′ meets the x-axis again at G = (φ, 0)",
+        ops: endOps(),
+        spheres: [Sphi], lines: [], pairs: [Gmeet.pair], segments: [[O, Hp]],
+        points: [{ p: G, label: "G" }]
+      });
+      return { H, Hp, G };
+    };
+
+    // The cube's vertices (±1, ±1, ±1): perpendiculars u = ±1 at V0 and Q,
+    // |OV0| along them gives (±1, ±1), then |OV0| up on the verticals there.
+    const cube = () => {
+      const [u1, u2] = perpendiculars(
+        "Perpendiculars to the x-axis at V₀ and Q: E = (2, 0), E′ = (−2, 0), and the bisectors of OE and OE′",
+        [[V0, "E"], [Q, "E′"]]);
+      beginOps();
+      const F = stand("Stand |OV₀| = 1 along the perpendiculars at V₀ and Q: the floor square (±1, ±1)",
+        [[u1, V0, O, V0, "v"], [u2, Q, O, V0, "v"]], [O, V0], [["F1", "F2"], ["F3", "F4"]]);
+      return verticalStand("Stand |OV₀| = 1 up on the verticals through F₁ … F₄: the cube's vertices (±1, ±1, ±1)",
+        [[F[0], u1, "v", "F₁"], [F[1], u1, "v", "F₂"], [F[2], u2, "v", "F₃"], [F[3], u2, "v", "F₄"]], O, V0);
+    };
+
+    // Edges: the pairs at the minimum distance (from inner products).
+    // Faces: the planes I_i ∧ I_j ∧ I_k ∧ n∞ through adjacent vertices with
+    // every vertex on one side (the sign of X ∧ π), triangulated for drawing.
+    const solidOf = V => {
+      const n = V.length;
+      const d2 = (i, j) => -2 * (V[i] | V[j])[0];
+      let min = Infinity;
+      for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) min = Math.min(min, d2(i, j));
+      const adj = (i, j) => (i === j) === false && Math.abs(d2(i, j) - min) < 1E-4 * min;
+      const edges = [];
+      for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) if (adj(i, j)) edges.push([V[i], V[j]]);
+
+      const seen = new Set(), faceSets = [];
+      for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) {
+        if (adj(i, j) === false) continue;
+        for (let k = 0; k < n; k++) {
+          if (k === i || adj(j, k) === false) continue;
+          const plane = V[i] ^ V[j] ^ V[k] ^ ni;
+          const side = V.map(X => (X ^ plane)[31]);
+          const eps = 1E-6 * Math.max(...side.map(Math.abs));
+          if (side.some(x => x > eps) && side.some(x => x < -eps)) continue;
+          const on = side.map((x, m) => Math.abs(x) <= eps ? m : -1).filter(m => m >= 0);
+          const key = on.join(",");
+          if (seen.has(key)) continue;
+          seen.add(key);
+          faceSets.push(on);
+        }
+      }
+      // Order each face around its centre (display only) and fan it.
+      const xyz = P => [uOf(P), vOf(P), hOf(P)];
+      const faces = faceSets.flatMap(f => {
+        const p = f.map(m => xyz(V[m]));
+        const c = [0, 1, 2].map(a => p.reduce((s, q) => s + q[a], 0) / p.length);
+        const e1 = [0, 1, 2].map(a => p[0][a] - c[a]);
+        const w = [0, 1, 2].map(a => p[1][a] - c[a]);
+        const nrm = [e1[1]*w[2] - e1[2]*w[1], e1[2]*w[0] - e1[0]*w[2], e1[0]*w[1] - e1[1]*w[0]];
+        const e2 = [nrm[1]*e1[2] - nrm[2]*e1[1], nrm[2]*e1[0] - nrm[0]*e1[2], nrm[0]*e1[1] - nrm[1]*e1[0]];
+        const dot = (a, b) => a[0]*b[0] + a[1]*b[1] + a[2]*b[2];
+        const order = f.map((m, k) => ({ m, a: Math.atan2(dot(e2, [0, 1, 2].map(x => p[k][x] - c[x])), dot(e1, [0, 1, 2].map(x => p[k][x] - c[x]))) }))
+          .sort((s, t) => s.a - t.a).map(o => V[o.m]);
+        return order.slice(1, -1).map((P, k) => [order[0], P, order[k + 2]]);
+      });
+      return { edges, faces, faceCount: faceSets.length, faceSize: faceSets.length ? faceSets[0].length : 0, edgeSq: min };
+    };
+
+    // The solid's own step, then (unless it is already there) the projection
+    // onto the unit sphere.
+    const finish = (V, extra) => {
+      beginOps();
+      if (extra) extra();
+      const s = solidOf(V);
+      const kind = ["", "", "", "triangles", "squares", "pentagons"][s.faceSize] || "faces";
+      record("\\text{edges: } I_i \\cdot I_j = -\\tfrac12 e^2,\\ e^2 = " + s.edgeSq.toFixed(4)
+        + " \\text{ (the minimum)}:\\ " + s.edges.length + " \\text{ edges}");
+      record("\\text{faces: planes } I_i \\wedge I_j \\wedge I_k \\wedge n_\\infty \\text{ with all vertices on one side}:\\ "
+        + s.faceCount + " \\text{ " + kind + "}");
+      const circum = sphere(O, O, V[0], "S_c");
+      const r2 = -2 * (O | V[0])[0];
+      const onUnit = Math.abs(r2 - 1) < 1E-6;
+      record("I_k \\cdot S_c^{*} = 0 \\text{ for all } k:\\ \\text{radius}^2 = " + r2.toFixed(4)
+        + (onUnit ? " \\text{ (already the unit sphere)}" : ""));
+      steps.push({
+        title: "The " + solidNames[solid] + ": " + V.length + " vertices, " + s.edges.length + " edges, "
+          + s.faceCount + " " + kind + ", all on one sphere",
+        ops: endOps(),
+        spheres: [circum], lines: [], pairs: [], segments: [], points: [],
+        solid: { edges: s.edges, faces: s.faces }
+      });
+      if (onUnit) return { vertices: V, unitVertices: V, edges: s.edges, unitEdges: s.edges };
+
+      // Radial projection: the line from O through Ik meets S_u in a pair;
+      // the point on Ik's side is Jk. All Ik are equally far from O, so this
+      // is a uniform scaling. The first projection is recorded.
+      beginOps();
+      const project = (P, k) => {
+        const ray = lineThrough(O, P);
+        const meet = intersect(ray, Su);
+        return { ray, pair: meet.pair, point: nearerTo(meet.points, P, "J" + (k + 1)) };
+      };
+      const first = project(V[0], 0);
+      const recorded = trace.ops.length;
+      const projections = [first, ...V.slice(1).map((P, k) => project(P, k + 1))];
+      trace.ops.length = recorded;
+      record("\\dots\\quad \\text{repeated for } J_{2}, \\dots, J_{" + V.length + "}");
+      const W = projections.map(p => p.point);
+      const index = new Map(V.map((P, k) => [P, k]));
+      const unitEdges = s.edges.map(([a, b]) => [W[index.get(a)], W[index.get(b)]]);
+      const unitFaces = s.faces.map(f => f.map(P => W[index.get(P)]));
+      record("\\text{scale } 1/\\sqrt{" + r2.toFixed(4) + "}:\\quad J_i \\cdot J_j = -\\tfrac12 e^2,\\ e \\approx "
+        + Math.sqrt(s.edgeSq / r2).toFixed(4));
+      steps.push({
+        title: "Scale to the unit sphere: each ray from O through Iₖ meets the unit sphere at Jₖ",
+        ops: endOps(),
+        spheres: [Su], lines: [first.ray], pairs: [first.pair], segments: [],
+        points: W.map((p, k) => ({ p, label: "J" + (k + 1) })),
+        solid: { edges: unitEdges, faces: unitFaces }
+      });
+      return { vertices: V, unitVertices: W, edges: s.edges, unitEdges };
+    };
+
+    let result;
+    if (solid === "octahedron") {
+      const top = verticalStand("Stand |OV₀| = 1 up on the vertical through O: (0, 0, ±1); with V₀, Q, A, A′ the octahedron's vertices",
+        [[O, xAxis, "u", "O"]], O, V0);
+      result = finish([V0, Q, A, Ap, ...top]);
+    } else if (solid === "cube") {
+      result = finish(cube());
+    } else if (solid === "tetrahedron") {
+      const C = cube();
+      // Alternate vertices: I1 and the three cube vertices at distance 2√2
+      // from it (face diagonals), i.e. with I1·Ij = -4.
+      const T = [C[0], ...C.slice(1).filter(P => Math.abs((C[0] | P)[0] + 4) < 1E-4)];
+      result = finish(T, () => record("\\text{alternate cube vertices: } I_1 \\text{ and the } I_j \\text{ with } I_1 \\cdot I_j = -\\tfrac12 (2\\sqrt2)^2 = -4"));
+    } else if (solid === "icosahedron") {
+      const { Hp, G } = golden();
+      const g = verticalStand("Stand |OV₀| = 1 up on the verticals through G and H′: vertices (±φ, 0, ±1)",
+        [[G, xAxis, "u", "G"], [Hp, xAxis, "u", "H′"]], O, V0);
+      const a = verticalStand("Stand |OH′| = φ up on the verticals through A and A′: vertices (0, ±1, ±φ)",
+        [[A, yAxis, "v", "A"], [Ap, yAxis, "v", "A′"]], O, Hp);
+      const [u1, u2] = perpendiculars(
+        "Perpendiculars to the x-axis at V₀ and Q: E = (2, 0), E′ = (−2, 0), and the bisectors of OE and OE′",
+        [[V0, "E"], [Q, "E′"]]);
+      beginOps();
+      const p = stand("Stand |OH′| = φ up along the perpendiculars at V₀ and Q: vertices (±1, ±φ, 0)",
+        [[u1, V0, O, Hp, "v"], [u2, Q, O, Hp, "v"]], [O, Hp]);
+      result = finish([...g, ...a, ...p]);
+    } else {
+      // Dodecahedron: the cube, plus the cyclic permutations of (0, ±1/φ, ±φ).
+      const { H, Hp, G } = golden();
+      const C = cube();
+      beginOps();
+      const SH = sphere(O, O, H);
+      const mx = intersect(xAxis, SH), my = intersect(yAxis, SH);
+      const K = choose(mx.points, "smaller u", "K");
+      const N = choose(my.points, "larger v", "N"), Np = choose(my.points, "smaller v", "N′");
+      steps.push({
+        title: "The sphere at O through H (radius 1/φ) meets the axes at K = (−1/φ, 0) and N, N′ = (0, ±1/φ)",
+        ops: endOps(),
+        spheres: [SH], lines: [], pairs: [mx.pair, my.pair], segments: [[O, H]],
+        points: [{ p: K, label: "K" }, { p: N, label: "N" }, { p: Np, label: "N′" }]
+      });
+      const [w1, w2] = perpendiculars(
+        "Perpendiculars to the x-axis at H and K: W = (2/φ, 0), W′ = (−2/φ, 0), and the bisectors of OW and OW′",
+        [[H, "W"], [K, "W′"]]);
+      beginOps();
+      const p = stand("Stand |OH′| = φ up along the perpendiculars at H and K: vertices (±1/φ, ±φ, 0)",
+        [[w1, H, O, Hp, "v"], [w2, K, O, Hp, "v"]], [O, Hp]);
+      const n = verticalStand("Stand |OH′| = φ up on the verticals through N and N′: vertices (0, ±1/φ, ±φ)",
+        [[N, yAxis, "v", "N"], [Np, yAxis, "v", "N′"]], O, Hp);
+      const g = verticalStand("Stand |OH| = 1/φ up on the verticals through G and H′: vertices (±φ, 0, ±1/φ)",
+        [[G, xAxis, "u", "G"], [Hp, xAxis, "u", "H′"]], O, H);
+      result = finish([...C, ...p, ...n, ...g]);
+    }
+
+    return { steps, Pi0, Su, ...result };
+  };
+
+  const methodInput = document.getElementById("verticalMethod");
+  const solidInput = document.getElementById("solid");
+  // An address ending in #cube (or another solid's name) opens that solid.
+  if (solidNames[location.hash.slice(1)]) solidInput.value = location.hash.slice(1);
+  let construction = construct(methodInput.value, solidInput.value);
+
+  // ---------------------------------------------------------------------------
+  // Rendering
+  // ---------------------------------------------------------------------------
+
+  const stepInput = document.getElementById("step");
+  const stepValue = document.getElementById("stepValue");
+  const showEarlierInput = document.getElementById("showEarlier");
+  const sphereModeInput = document.getElementById("sphereMode");
+  const showLabelsInput = document.getElementById("showLabels");
+  const labelObjectsInput = document.getElementById("labelObjects");
+  const showFacesInput = document.getElementById("showFaces");
+  stepInput.max = String(construction.steps.length - 1);
+  stepInput.value = stepInput.max;
+
+  const subscriptDigits = "₀₁₂₃₄₅₆₇₈₉";
+  const subscript = text => text.replace(/([A-Z][̂′]?)(\d+)/g,
+    (m, name, digits) => name + digits.split("").map(d => subscriptDigits[Number(d)]).join(""));
+
+  // Typeset LaTeX with KaTeX (the page has a doctype: KaTeX refuses quirks
+  // mode); without KaTeX, show the LaTeX source.
+  const renderTex = (src, el) => {
+    if (window.katex) {
+      try {
+        window.katex.render(src, el, { throwOnError: false });
+        return;
+      } catch (e) {
+        console.warn("KaTeX could not render:", e);
+      }
+    }
+    el.textContent = src;
+    el.classList.add("tex-fallback");
+  };
+  document.querySelectorAll("#ops .tex").forEach(el => renderTex(el.textContent, el));
+
+  const opsSteps = document.getElementById("opsSteps");
+  const renderOps = current => {
+    opsSteps.textContent = "";
+    let currentElement = null;
+    for (let i = 0; i <= current; i++) {
+      const s = construction.steps[i];
+      const div = document.createElement("div");
+      div.className = i === current ? "step current" : "step";
+      const h = document.createElement("h4");
+      h.textContent = "Step " + i + ": " + s.title;
+      const lines = document.createElement("div");
+      lines.className = "ops-lines";
+      s.ops.forEach(op => {
+        const line = document.createElement("div");
+        renderTex(op, line);
+        lines.appendChild(line);
+      });
+      div.appendChild(h);
+      div.appendChild(lines);
+      opsSteps.appendChild(div);
+      if (i === current) currentElement = div;
+    }
+    if (currentElement && currentElement.scrollIntoView) currentElement.scrollIntoView({ block: "nearest" });
+  };
+
+  // Optional labels for the current step's spheres, lines, point pairs and
+  // radii, with their recorded LaTeX names. ganja draws labels as HTML here
+  // (htmlText) and typesets \( ... \) with KaTeX's auto-render; it places a
+  // label at the middle of the last line segment drawn before it (slightly
+  // raised), so each label follows an invisible zero-length segment [P, P].
+  const texLabel = t => "\\(" + t + "\\)";
+
+  const origin3 = point3(0, 0, 0);
+  const at = (u, v, h) => point3(u, h, -v);
+  const xyz = P => [uOf(P), vOf(P), hOf(P)];
+
+  // Candidate label positions for each kind of object, in order of
+  // preference; objectLabels takes the first one clear of other labels.
+  // A sphere: four points 45° up the sphere, the top, then the equator.
+  const sphereCandidates = S => {
+    const c = centerOf(S), s = normalize(!S);
+    const r = Math.sqrt(Math.max(0, (s | s)[0]));
+    const [cu, cv, ch] = xyz(c), k = r * Math.SQRT1_2;
+    return [[k, 0, k], [-k, 0, k], [0, k, k], [0, -k, k], [0, 0, r],
+            [r, 0, 0], [-r, 0, 0], [0, r, 0], [0, -r, 0]].map(([du, dv, dh]) => at(cu + du, cv + dv, ch + dh));
+  };
+  // A line: both points where it meets spheres around O of growing radius.
+  const lineCandidates = L => {
+    const out = [];
+    for (const r of [1.5, 2.5, 4, 6]) {
+      const T = L & !(origin3 - 0.5*r*r*ni);
+      if ((T*T)[0] > 1E-9) out.push(...splitPointPair(T));
+    }
+    return out;
+  };
+  // A point pair: below or above either point, then to either side (its
+  // points often carry point labels, so keep clear of them).
+  const pairCandidates = T => {
+    const pts = splitPointPair(T).map(xyz);
+    const offsets = [[0, 0, -0.5], [0, 0, 0.5], [0.5, 0, 0], [-0.5, 0, 0], [0, 0.5, 0], [0, -0.5, 0]];
+    return offsets.flatMap(([du, dv, dh]) => pts.map(([u, v, h]) => at(u + du, v + dv, h + dh)));
+  };
+  // A radius segment: points along it (middle first), moved up, down or to
+  // the side (sideways matters for a vertical segment, such as Q′Q↑).
+  const segmentCandidates = ([A, B]) => {
+    const [a, b] = [xyz(A), xyz(B)];
+    const along = t => [0, 1, 2].map(i => a[i] + t*(b[i] - a[i]));
+    const offsets = [[0, 0, 0.2], [0, 0, -0.2], [0.3, 0, 0], [-0.3, 0, 0], [0, 0.3, 0], [0, -0.3, 0], [0, 0, 0.35], [0, 0, -0.35]];
+    const out = [];
+    for (const [du, dv, dh] of offsets)
+      for (const t of [0.5, 0.33, 0.67, 0.25, 0.75]) { const p = along(t); out.push(at(p[0] + du, p[1] + dv, p[2] + dh)); }
+    return out;
+  };
+
+  // Labels for the current step's objects. taken: positions already holding a
+  // label (the point labels shown); each object label takes its first
+  // candidate at least 0.4 from all of them, else the one farthest away, and
+  // then counts as taken itself.
+  const objectLabels = (s, taken) => {
+    const out = [];
+    const used = taken.map(xyz);
+    const clearance = P => Math.min(Infinity, ...used.map(q => Math.hypot(...xyz(P).map((x, i) => x - q[i]))));
+    const add = (color, candidates, text) => {
+      if (text.indexOf("?") >= 0 || candidates.length === 0) return;
+      let best = candidates.find(P => clearance(P) >= 0.4);
+      if (best === undefined) best = candidates.reduce((a, b) => clearance(b) > clearance(a) ? b : a);
+      used.push(xyz(best));
+      out.push(color, [best, best], text);
+    };
+    (s.spheres || []).forEach(S => add(0xB05A00, sphereCandidates(S), texLabel(nameOf(S))));
+    (s.lines || []).forEach(L => add(0x555555, lineCandidates(L), texLabel(nameOf(L))));
+    (s.pairs || []).forEach(T => add(0x6666AA, pairCandidates(T), texLabel(nameOf(T))));
+    (s.segments || []).forEach(seg => add(0xB05A00, segmentCandidates(seg),
+      texLabel("\\lvert " + nameOf(seg[0]) + nameOf(seg[1]) + "\\rvert")));
+    return out;
+  };
+
+  // The scene, rebuilt from the controls whenever ganja redraws. It refills
+  // one persistent list: ganja attaches its HTML label elements to that list
+  // (as properties _0, _1, ...), so a new list each frame would create new
+  // label elements every frame while dragging, leaving trails.
+  const sceneList = [];
+  const scene = () => {
+    const step = Number(stepInput.value);
+    const out = sceneList;
+    out.length = 0;
+    const points = [];
+
+    for (let i = 0; i <= step; i++) {
+      const s = construction.steps[i];
+      const isCurrent = i === step;
+      if (isCurrent || showEarlierInput.checked) {
+        out.push(isCurrent ? 0xE07000 : 0xBBBBBB, ...s.spheres.map(cut));
+        out.push(0x999999, ...s.lines);
+        if (s.circles && s.circles.length) out.push(isCurrent ? 0xE07000 : 0xBBBBBB, ...s.circles);
+        out.push(0x7777CC, ...s.pairs);
+        if (s.segments.length) out.push(isCurrent ? 0xE07000 : 0xCCCCCC, ...s.segments);
+      }
+      s.points.forEach(q => points.push(q));
+    }
+
+    // The solid of the current step; the earlier (unscaled) one in grey.
+    const solid = construction.steps[step].solid;
+    if (solid) out.push(0x2277DD, ...solid.edges);
+    for (let i = 0; i < step; i++) {
+      const earlier = construction.steps[i].solid;
+      if (earlier && showEarlierInput.checked) out.push(0xBBBBBB, ...earlier.edges);
+    }
+
+    points.forEach(q => {
+      out.push(0x333333, q.p);
+      if (showLabelsInput.checked && q.label) out.push(subscript(q.label));
+    });
+
+    // Centres of the current step's spheres, in orange like their circles.
+    const currentSpheres = construction.steps[step].spheres;
+    if (currentSpheres.length) out.push(0xE07000, ...currentSpheres.map(centerOf));
+
+    if (labelObjectsInput.checked) {
+      const taken = showLabelsInput.checked ? points.filter(q => q.label).map(q => q.p) : [];
+      out.push(...objectLabels(construction.steps[step], taken));
+    }
+
+    // Transparent objects last: the plane, then the current step's spheres.
+    out.push(0xE0B0B0B0, construction.Pi0);
+    if (solid && showFacesInput.checked) out.push(0x806699DD, ...solid.faces);
+    // The current step's spheres: as translucent spheres, or as the circles
+    // where they meet (when the step has such circles), or not at all.
+    const current = construction.steps[step];
+    const meets = current.meets || [];
+    const mode = sphereModeInput.value;
+    if (mode === "meets" && meets.length) {
+      out.push(0xE07000, ...meets);
+    } else if (mode === "spheres" || mode === "meets") {
+      out.push(0xD0F0A860, ...current.spheres);
+    }
+    return out;
+  };
+
+  const view = document.getElementById("view");
+  const placeView = () => {
+    view.style.top = document.getElementById("controls").offsetHeight + "px";
+    document.getElementById("ops").style.top = view.style.top;
+  };
+  placeView();
+
+  const graphOptions = { conformal: true, gl: true, grid: false, htmlText: true, h: 0.6, p: -0.45, z: 9 };
+  const canvas = this.graph(scene, graphOptions);
+  view.appendChild(canvas);
+
+  // ganja keeps one HTML label element per scene position (on the scene list,
+  // or on the canvas) and never removes them; clear them all before a redraw
+  // so labels of another step vanish.
+  const clearHtmlLabels = () => {
+    for (let i = 0; i < 4000; i++) {
+      [sceneList["_" + i], canvas["_" + i]].forEach(div => {
+        if (div) { div.innerHTML = ""; div.last = undefined; }
+      });
+    }
+  };
+
+  const redraw = () => {
+    clearHtmlLabels();
+    stepValue.textContent = stepInput.value;
+    renderOps(Number(stepInput.value));
+    canvas.update(scene);
+  };
+  [stepInput, showEarlierInput, sphereModeInput, showLabelsInput, labelObjectsInput, showFacesInput].forEach(el => {
+    el.addEventListener("input", redraw);
+    el.addEventListener("change", redraw);
+  });
+  // Changing the solid or the method rebuilds the construction (its step
+  // count changes); the slider moves to the last step.
+  const rebuild = () => {
+    construction = construct(methodInput.value, solidInput.value);
+    stepInput.max = String(construction.steps.length - 1);
+    stepInput.value = stepInput.max;
+    redraw();
+  };
+  methodInput.addEventListener("change", rebuild);
+  solidInput.addEventListener("change", rebuild);
+  window.addEventListener("resize", () => { placeView(); canvas.update(scene); });
+  redraw();
+});
+</SCRIPT>
+</BODY>
