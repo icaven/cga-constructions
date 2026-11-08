@@ -132,15 +132,6 @@
   }
   blockquote.quote p { margin: 0; }
 
-  .unverified {
-    border: 1px solid var(--caution);
-    background: var(--caution-bg);
-    color: var(--ink);
-    padding: 0.8rem 1rem;
-    border-radius: 4px;
-    margin: 1rem 0;
-  }
-  .unverified strong { color: var(--caution); font-family: var(--display); letter-spacing: 0.03em; }
 
   aside.note {
     font-size: 0.95rem;
@@ -262,18 +253,26 @@
 <header class="col">
   <div class="eyebrow">Conformal geometric algebra · ganja.js</div>
   <h1>Compass constructions in conformal geometric algebra</h1>
-  <p class="byline">Ian Cavén, with Claude Opus 5.5 · <time datetime="2026-11-07">2026-11-07</time></p>
+  <p class="byline">Ian Cavén, with Claude Opus 5.5 · <time datetime="2026-11-07">2026-11-07</time>, updated <time datetime="2026-11-08">2026-11-08</time></p>
   <p class="lede">
+    Greek geometers built regular polygons with nothing but a compass and a straightedge. Conformal
+    geometric algebra turns each of their moves into a single algebraic operation you can compute,
+    transform and record. This page follows that translation from the pentagon and the 17-gon to the
+    Platonic solids, and then adds one parabola to reach the 7-, 9-, 13- and 19-gons that the compass
+    alone cannot.
+  </p>
+  <p>
     Every classical construction step has a direct CGA form: a straightedge is a join with
     <span class="m">n_\infty</span>, a compass is a dual sphere whose radius is carried by an inner
     product, and an intersection is a meet that returns a point pair. This page collects how far
     that goes: regular polygons by Carlyle circles in CGA2D, circles as cuts of lifted spheres in
-    CGA3D, the icosahedron, and what can and cannot be reached.
+    CGA3D, the Platonic solids, what can and cannot be reached, and, with one parabola in the
+    geometric algebra for conics, the 7-, 9-, 13- and 19-gons.
   </p>
   <p>
     Every construction starts from two given points, <span class="m">O</span> and
     <span class="m">V_0</span>. Euclidean coordinates are read only to pick one point of an
-    intersection pair. The four demos are live ganja.js pages; each step lists the CGA operations
+    intersection pair. The demos are live ganja.js pages; each step lists the CGA operations
     it actually ran, recorded by the construction helpers.
   </p>
   <p>
@@ -289,8 +288,7 @@
       <li><a href="#lifting">Lifting spheres in CGA3D</a></li>
       <li><a href="#solids">Platonic solids</a></li>
       <li><a href="#theory">What can be constructed</a></li>
-      <li><a href="#parabola">Beyond square roots: a parabola</a></li>
-      <li><a href="#open">Open directions</a></li>
+      <li><a href="#parabola">Beyond square roots: a parabola in GAC</a></li>
     </ol>
     <p class="toc-extra"><a href="#references">References</a> · <a href="#further-reading">Further reading</a></p>
   </nav>
@@ -851,100 +849,116 @@
 </section>
 
 <section class="col" id="parabola">
-  <h2><span class="no">7</span>Beyond square roots: a parabola</h2>
+  <h2><span class="no">7</span>Beyond square roots: a parabola in GAC</h2>
   <p>
     Descartes' method (<a class="cite" href="#ref-descartes">La Géométrie, 1637</a>) solves any cubic or quartic with one fixed parabola <span class="m">y = x^2</span> and circles.
     Substituting into <span class="m">x^2 + y^2 + Dx + Ey + F = 0</span> gives
   </p>
   <div class="md">x^4 + (1 + E)\,x^2 + D\,x + F = 0 .</div>
   <p>
-    For a depressed cubic <span class="m">t^3 + pt + q = 0</span>, multiply by <span class="m">t</span>: the quartic
-    <span class="m">t^4 + pt^2 + qt</span> needs <span class="m">E = p - 1</span>, <span class="m">D = q</span>,
-    <span class="m">F = 0</span>, so the circle passes through <span class="m">O</span> with centre
+    For a cubic <span class="m">t^3 + a t^2 + b t + c = 0</span>, choose the fourth root to be <span class="m">t = a</span>; that removes the
+    <span class="m">t^3</span> term:
   </p>
-  <div class="md">\Big(-\frac{q}{2},\ \frac{1 - p}{2}\Big),</div>
-  <p>built from the cubic's coefficients by ordinary constructions. It meets the parabola at the origin and at <span class="m">x = t</span> for each real root.</p>
+  <div class="md">(t - a)(t^3 + a t^2 + b t + c) = t^4 + (b - a^2)\,t^2 + (c - ab)\,t - ac .</div>
+  <p>
+    So the circle has centre and a known point
+  </p>
+  <div class="md">M = \Big(\frac{ab - c}{2},\ \frac{a^2 - b + 1}{2}\Big), \qquad P_a = (a,\ a^2),</div>
+  <p>
+    and it meets the parabola at <span class="m">P_a</span> and at <span class="m">x = t</span> for each real root of the cubic. Every
+    case below has a centre whose coordinates are linear in what is already constructed, so it is found with compass and
+    straightedge.
+  </p>
   <div class="table-wrap">
     <table>
-      <thead><tr><th>Target</th><th>Cubic</th><th>Circle centre (through O)</th></tr></thead>
+      <thead><tr><th>Target</th><th>Cubic</th><th>Centre <span class="m">M</span></th><th>Through <span class="m">P_a</span></th></tr></thead>
       <tbody>
-        <tr><td>9-gon</td><td><span class="m">x^3 - 3x + 1 = 0</span>, root <span class="m">2\cos 40^\circ</span></td><td><span class="m">(-\tfrac12,\ 2)</span>, radius <span class="m">\tfrac{\sqrt{17}}{2}</span></td></tr>
-        <tr><td>7-gon</td><td><span class="m">x^3 + x^2 - 2x - 1 = 0</span>; <span class="m">x = t - \tfrac13</span> gives <span class="m">t^3 - \tfrac73 t - \tfrac{7}{27}</span></td><td><span class="m">(\tfrac{7}{54},\ \tfrac53)</span></td></tr>
-        <tr><td>snub cube</td><td><span class="m">t^3 - t^2 - t - 1 = 0</span>; <span class="m">t = s + \tfrac13</span> gives <span class="m">s^3 - \tfrac43 s - \tfrac{38}{27}</span></td><td><span class="m">(\tfrac{19}{27},\ \tfrac76)</span></td></tr>
+        <tr><td>9-gon</td><td><span class="m">t^3 - 3t + 1</span>, root <span class="m">2\cos\frac{2\pi}{9}</span></td><td><span class="m">(-\tfrac12,\ 2)</span></td><td><span class="m">O</span></td></tr>
+        <tr><td>7-gon</td><td><span class="m">t^3 + t^2 - 2t - 1</span>, root <span class="m">2\cos\frac{2\pi}{7}</span></td><td><span class="m">(-\tfrac12,\ 2)</span></td><td><span class="m">S = (1, 1)</span></td></tr>
+        <tr><td>13-gon</td><td><span class="m">\eta^2 + \eta - 3 = 0</span> (a Carlyle circle), then <span class="m">t^3 - \eta t^2 - t + \eta - 1</span></td><td><span class="m">\big(\tfrac12,\ \tfrac{\eta^2 + 2}{2}\big)</span></td><td><span class="m">(-\eta,\ \eta^2)</span></td></tr>
+        <tr><td>19-gon</td><td><span class="m">t^3 + t^2 - 6t - 7</span> for <span class="m">\eta</span>, then <span class="m">t^3 - \eta t^2 + (\eta^2 - 5)t + \eta^2 - 6</span></td><td><span class="m">(\tfrac12,\ 4)</span>, then <span class="m">\big(\tfrac{-\eta - 1}{2},\ 3\big)</span></td><td><span class="m">S</span>, then <span class="m">(-\eta,\ \eta^2)</span></td></tr>
+        <tr><td>snub cube</td><td><span class="m">t^3 - t^2 - t - 1</span>, the tribonacci constant</td><td><span class="m">(1,\ \tfrac32)</span></td><td><span class="m">(-1,\ 1)</span></td></tr>
       </tbody>
     </table>
   </div>
   <p>
-    For the 9-gon the circle meets the parabola at <span class="m">x = 0</span> and at
-    <span class="m">2\cos40^\circ\approx 1.532</span>, <span class="m">2\cos80^\circ\approx 0.347</span> and
-    <span class="m">2\cos160^\circ\approx -1.879</span>. Any fixed non-degenerate conic would do (Pappus trisected with a
-    rectangular hyperbola, Menaechmus doubled the cube with two parabolas); with one, compass and straightedge reach the
-    towers of degree-2 and degree-3 extensions, the same field as origami.
+    The 13-gon needs a quadratic and then a cubic, since <span class="m">13 - 1 = 2^2\cdot 3</span>; the 19-gon needs two cubics, since
+    <span class="m">19 - 1 = 2\cdot 3^2</span>, and the second circle is built from the first meet's answer: <span class="m">P_a</span>
+    is the first root's point mirrored in the y-axis. Doubling the number of sides takes the smallest root of the conjugate
+    tower and mirrors it, since <span class="m">2\cos\frac{\pi}{n} = -2\cos\frac{(n-1)\pi}{n}</span>. With one conic,
+    compass and straightedge reach towers of square and cube roots, and so the same regular polygons as with an angle
+    trisector (<a class="cite" href="#ref-gleason">Gleason, 1988</a>): <span class="m">n = 2^r 3^s p_1\cdots p_k</span> for
+    distinct Pierpont primes <span class="m">p_i = 2^u 3^v + 1</span>. The 11-gon is out of reach, because
+    <span class="m">2\cos\frac{2\pi}{11}</span> needs a quintic and a circle meets a conic in at most four points.
   </p>
+
+  <h3>The construction in GAC</h3>
   <p>
-    In the demo below, the centre <span class="m">M = (-\tfrac12, 2)</span> is constructed classically: <span class="m">Q'</span>
-    bisects <span class="m">QO</span>, then <span class="m">\lvert QV_0\rvert = 2</span> is laid along the bisector. The
-    parabola is not a CGA object, so its intersection <span class="m">X</span> with <span class="m">C_M(O)</span> is the one
-    step computed numerically. Then <span class="m">X' = L_x^{*} X L_x^{*}</span> reflects it in the x-axis, the line
-    <span class="m">XX'</span> meets the axis at <span class="m">H = (2\cos 40^\circ, 0)</span>, and the usual final step and
-    rotor finish the 9-gon.
+    In the geometric algebra for conics, <span class="m">\mathbb{R}^{5,3}</span> (<a class="cite" href="#ref-gac">Hrdina, Návrat and Vašík, 2018</a>),
+    a point also carries the quadratic monomials of its coordinates,
+  </p>
+  <div class="md">\hat P(x, y) = o + x\,e_1 + y\,e_2 + \tfrac12(x^2 + y^2)\,n_\infty + \tfrac12(x^2 - y^2)\,n_{-} + xy\,n_{\times},</div>
+  <p>
+    and the conic through five points is their outer product with <span class="m">\bar o_{-}\wedge\bar o_{\times}</span>, as a circle
+    through three points is in CGA. CGA2D sits inside GAC: a map <span class="m">\iota</span> carries its vectors over, and a circle
+    with dual <span class="m">s</span> becomes the GAC conic <span class="m">\iota(s)\,I</span>. So the demo below does its compass and
+    straightedge work in CGA2D, and only the conic step in GAC:
+  </p>
+  <ol>
+    <li>The parabola is given by five points, <span class="m">\mathcal P = \hat P_{-2}\wedge\hat P_{-1}\wedge\hat O\wedge\hat S\wedge\hat P_{2}\wedge\bar o_{-}\wedge\bar o_{\times}</span>,
+      and drawn from that element.</li>
+    <li>The centre <span class="m">M</span> and the circle <span class="m">C_M(P_a)</span> are built in CGA2D, then carried over as
+      <span class="m">\hat C = \iota(C^{*})\,I</span>.</li>
+    <li>Their meet <span class="m">Q_4 = \mathcal P \vee \hat C</span> is a grade-6 blade, the <em>point quadruple</em> of the four
+      common points, as a meet of two circles is a point pair in CGA.</li>
+    <li><span class="m">\operatorname{split}_4(Q_4)</span> finds those points: <span class="m">\hat P(t, t^2)\wedge\hat C = 0</span> is the
+      quartic above, with coefficients read from the GAC elements. Its roots are found numerically, just as
+      <span class="m">\operatorname{split}(T)</span> computes a square root. A closed form would not avoid this: with three real
+      roots, Cardano's formula takes cube roots of complex numbers, such as
+      <span class="m">\sqrt[3]{e^{2\pi i/3}} = e^{2\pi i/9}</span>, which is the trisection itself. We know of no formula that
+      splits <span class="m">Q_4</span> directly from the blade, as <span class="m">(T \pm \sqrt{T\cdot T})(n_\infty\rfloor T)</span>
+      splits a pair; here the parabola's parametrization <span class="m">\hat P(t, t^2)</span> stands in for it.</li>
+    <li>The chosen root returns to CGA2D as <span class="m">X = \pi(\hat X)</span>. Circles centred at <span class="m">O</span> and
+      <span class="m">V_0</span> through <span class="m">X</span> meet again at its mirror image <span class="m">X'</span>, the line
+      <span class="m">XX'</span> meets the x-axis at <span class="m">H = (2\cos\frac{2\pi}{n}, 0)</span>, and the usual final step and
+      rotor finish the polygon.</li>
+  </ol>
+  <p>
+    GAC also has versors for the plane's similarities, which these pages checked numerically in ganja.js
+    (<a href="gac-operations.html">GAC operations page</a>). The rotation by <span class="m">\theta</span> about the origin is
+    <span class="m">R = \exp(-\tfrac12\theta\,e_{12})\,\exp\!\big(\theta\,(e_7\wedge e_8 - e_4\wedge e_5)\big)</span>, with a second factor
+    because <span class="m">\tfrac12(x^2 - y^2)</span> and <span class="m">xy</span> turn by <span class="m">2\theta</span>.
+    A reflection in a line through the origin takes three vectors, the line's normal and a reflection of the
+    <span class="m">(n_{-}, n_{\times})</span> plane at twice the angle, and two of them compose to that rotor, as in CGA.
+    Translations are versors too; inversions are not, since inverting a conic generally gives a quartic.
   </p>
 </section>
 
-<figure class="demo wide" id="figure-7" aria-label="Live demo: 9-gon with a parabola">
-  <div class="frame"><button type="button" class="close" hidden>Close</button><iframe src="polygons.html#n9" title="9-gon from a circle and a parabola" loading="lazy"></iframe></div>
+<aside class="col legend-box" id="legend-gac" aria-label="Legend for the GAC construction panel">
+  <h3>Reading the GAC panel</h3>
+  <p>The notation of the construction panels above, plus:</p>
+  <dl class="dict">
+    <dt>GAC points</dt>
+    <dd><span class="m">\hat P(x, y)</span> as above; <span class="m">\hat P(t, t^2)</span> runs along the parabola <span class="m">\mathcal P</span>.</dd>
+    <dt>Between algebras</dt>
+    <dd><span class="m">\iota</span> takes CGA2D into GAC, <span class="m">(e_1, e_2, e_3, e_4) \mapsto (e_1, e_2, -e_3, e_6)</span>;
+      <span class="m">\pi</span> takes a GAC point back, dropping its <span class="m">n_{-}, n_{\times}</span> parts.</dd>
+    <dt>Quadruples</dt>
+    <dd><span class="m">Q_4</span> is a point quadruple and <span class="m">\operatorname{split}_4</span> its four points. A meet of a
+      line with <span class="m">\mathcal P</span> has one finite point, and its split is linear.</dd>
+    <dt>Rings</dt>
+    <dd>The points of the current step's point pairs (violet) and point quadruple (pink) are ringed.</dd>
+  </dl>
+</aside>
+
+<figure class="demo wide" id="figure-7" aria-label="Live demo: regular polygons with a parabola in GAC">
+  <div class="frame"><button type="button" class="close" hidden>Close</button><iframe src="gac-polygons.html#n7" title="Regular polygons with a parabola in GAC" loading="lazy"></iframe></div>
   <figcaption>
-    <span><b>Figure 7.</b> Demo · CGA2D with one non-classical step. The same page as above, opened on the 9-gon; the parabola is
-      drawn in teal from step 2.</span>
-    <span class="actions"><button type="button" class="expand">Full screen</button> <a href="polygons.html#n9">Open page</a></span>
+    <span><b>Figure 7.</b> Demo · GAC <span class="m">\mathbb{R}^{5,3}</span> with CGA2D inside it. Opens on the 7-gon; choose the 9-, 13- or
+      19-gon, or by mirroring the 14-, 18-, 26- or 38-gon. Zoom out for the larger circles.</span>
+    <span class="actions"><button type="button" class="expand">Full screen</button> <a href="gac-polygons.html#n7">Open page</a></span>
   </figcaption>
 </figure>
-
-<section class="col" id="open">
-  <h2><span class="no">8</span>Open directions</h2>
-  <div class="unverified">
-    <strong>UNVERIFIED.</strong> The descriptions in this section were written from memory: check the basis and sign
-    conventions against the sources before relying on them. The publication details in the references have been checked.
-  </div>
-  <h3>Conic space, ℝ⁶ (Perwass)</h3>
-  <p>
-    Six is the smallest dimension in which every conic <span class="m">ax^2 + by^2 + 2hxy + 2gx + 2fy + c = 0</span> is a vector.
-    Perwass (<a class="cite" href="#ref-perwass">2009</a>) builds conic space on the symmetric
-    <span class="m">3\times3</span> matrices with the trace inner product:
-  </p>
-  <ul>
-    <li>A conic is the vector <span class="m">M = \begin{pmatrix} a &amp; h &amp; g\\ h &amp; b &amp; f\\ g &amp; f &amp; c\end{pmatrix}</span>.</li>
-    <li>A point is <span class="m">X = \hat x\hat x^{\mathsf T}</span>, <span class="m">\hat x = (x, y, 1)</span>, the Veronese embedding:
-      <span class="m">(x^2, y^2, \sqrt2\,xy, \sqrt2\,x, \sqrt2\,y, 1)</span> in an orthonormal basis.</li>
-    <li>Incidence is the inner product, <span class="m">X\cdot M = \hat x^{\mathsf T} M \hat x</span>, and the outer product of five
-      points gives the dual of the conic through them.</li>
-    <li>The parabola <span class="m">y = x^2</span> is <span class="m">a = 1</span>, <span class="m">f = -\tfrac12</span>, all else zero. With a
-      circle <span class="m">C</span>, the intersections satisfy <span class="m">X\rfloor(P\wedge C) = 0</span>: the pencil carries them.</li>
-  </ul>
-  <p>
-    Two limits compared with CGA: valid points must lie on the Veronese surface, so the four intersections cannot be
-    read off by factorizing a blade (extracting them is the quartic itself); and not every Euclidean motion is a versor,
-    translations in particular.
-  </p>
-  <h3>GAC, ℝ<sup>5,3</sup></h3>
-  <p>
-    The geometric algebra for conics of Hrdina, Návrat and Vašík (<a class="cite" href="#ref-gac">2018</a>) keeps conics as vectors and restores
-    translations, rotations and scalings as versors, with the plane's CGA <span class="m">\mathbb{R}^{3,1}</span> inside it. A 9-gon
-    construction in the style of these pages (meets, sandwiches, rotors, plus a parabola) fits there.
-  </p>
-  <h3>Other 6D algebras</h3>
-  <ul>
-    <li><span class="m">\mathbb{R}^{5,1}</span>, the CGA of 4D space: hyperspheres and hyperplanes; a parabola is not a native element.</li>
-    <li><span class="m">\mathbb{R}^{4,2}</span>, Lie sphere geometry of the plane (or Plücker line geometry of 3D): oriented circles,
-      lines and points with tangency as orthogonality; a parabola appears only indirectly, as an envelope.</li>
-  </ul>
-  <p>
-    Inside CGA itself there is a hint: the embedding <span class="m">n_o + x\,e_1 + \tfrac12 x^2 n_\infty</span> traces
-    <span class="m">\tfrac12 x^2</span> in its <span class="m">n_\infty</span> coefficient, so the point embedding already is a
-    parabola, but the algebra cannot meet it with an arbitrary circle. That step from quadratics to quartics is what the larger
-    algebras add.
-  </p>
-</section>
 
 <section class="col" id="references">
   <h2>References</h2>
@@ -967,8 +981,6 @@
       parabola and a circle.</li>
     <li id="ref-dorst">Leo Dorst, Daniel Fontijne and Stephen Mann, <i>Geometric Algebra for Computer Science</i>,
       Morgan Kaufmann (2007): a full treatment of conformal geometric algebra.</li>
-    <li id="ref-perwass">Christian Perwass, <i>Geometric Algebra with Applications in Engineering</i>, Geometry and
-      Computing 4, Springer (2009). <a href="https://doi.org/10.1007/978-3-540-89068-3">doi:10.1007/978-3-540-89068-3</a>.</li>
     <li id="ref-gac">Jaroslav Hrdina, Aleš Návrat and Petr Vašík, “Geometric Algebra for Conics,”
       <i>Advances in Applied Clifford Algebras</i> 28 (2018), article 66.
       <a href="https://doi.org/10.1007/s00006-018-0879-2">doi:10.1007/s00006-018-0879-2</a>.</li>
@@ -990,7 +1002,8 @@
 </main>
 
 <footer class="col">
-  The demos are the pages <a href="polygons.html">polygons</a>, <a href="pentagon-lift.html">pentagon-lift</a> and
+  The demos are the pages <a href="polygons.html">polygons</a>, <a href="gac-polygons.html">gac-polygons</a>,
+  <a href="gac-operations.html">gac-operations</a>, <a href="pentagon-lift.html">pentagon-lift</a> and
   <a href="platonic-solids.html">platonic-solids</a>; the source is at
   <a href="https://github.com/icaven/cga-constructions">github.com/icaven/cga-constructions</a>. The 3D demos need WebGL.
   Each demo's operations panel is recorded by the construction helpers as they run, so it always matches what was computed.
@@ -1020,7 +1033,7 @@
     const say = (id, text) => { const el = document.getElementById(id); if (el) el.textContent = text; };
 
     // 1. Two reflections make a rotation.
-    const O = pt(0, 0), Pa = pt(1.3, 0.25), Pb = pt(0.75, 1.05), X = pt(1.15, -0.65);
+    const O = pt(0, 0), Pa = pt(1.25, 0.45), Pb = pt(0.75, 1.05), X = pt(1.15, -0.65);
     const la = () => !(O ^ Pa ^ ni), lb = () => !(O ^ Pb ^ ni);
     const X1 = () => la() * X * la();
     const X2 = () => lb() * X1() * lb();

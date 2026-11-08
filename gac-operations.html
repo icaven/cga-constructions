@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<HTML>
+<HEAD>
+  <META charset="utf-8">
+  <TITLE>GAC Operations</TITLE>
+  <SCRIPT SRC="https://cdn.jsdelivr.net/npm/ganja.js@1.0.204/ganja.js"></SCRIPT>
+  <STYLE>
+    body { font-family: system-ui, sans-serif; margin: 16px; color: #222; background: #fff; }
+    h1 { font-size: 1.3em; margin: 0 0 8px; }
+    .controls { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 8px; }
+    .layout { display: flex; gap: 16px; flex-wrap: wrap; }
+    #view { flex: 1 1 520px; min-width: 300px; height: 600px; border: 1px solid #ddd; }
+    #view > * { width: 100% !important; height: 100% !important; }
+    #notes { flex: 1 1 300px; max-width: 460px; line-height: 1.45; }
+    #notes code { background: #f3f3f3; padding: 0 3px; }
+    .formula { font-family: "Cambria Math", "STIX Two Math", serif; background: #f7f7f7; padding: 6px 8px; margin: 6px 0; white-space: nowrap; overflow-x: auto; }
+    .hint { color: #666; font-size: 0.9em; }
+  </STYLE>
+</HEAD>
+<BODY>
+<h1>Geometric algebra for conics: GAC, ℝ<sup>5,3</sup></h1>
+<div class="controls">
+  <label>Example
+    <select id="example">
+      <option value="conic">Conic through five points</option>
+      <option value="circle">Circle through three points</option>
+      <option value="rotor">Rotor applied to a conic</option>
+      <option value="reflections">Two reflections make a rotor</option>
+      <option value="translator">Translator applied to a conic</option>
+      <option value="polygon">Regular polygon by rotor stepping</option>
+    </select>
+  </label>
+  <label id="nLabel">n <input id="n" type="number" min="3" max="24" value="5" style="width:4em"></label>
+</div>
+<div class="layout">
+  <div id="view"></div>
+  <div id="notes"></div>
+</div>
+<SCRIPT>
+// Two algebras: GAC = ℝ(5,3) does the geometry; CGA2 = ℝ(3,1) only draws it,
+// because ganja's 2D SVG renderer handles 4D conformal algebras.
+var CGA2 = Algebra(3,1), GAC = {};
+
+// --- GAC (Hrdina, Návrat, Vašík 2018), ganja's basis as in example_csga2d_opns.html:
+// e1, e2 Euclidean; three null pairs n∞ = n1 - p1, n₋ = n2 - p2, n× = n3 - p3
+// and o = ½(n1 + p1), o₋ = ½(n2 + p2), o× = ½(n3 + p3), with p = e3..e5 (+1), n = e6..e8 (−1).
+Algebra(5,3,()=>{
+  var [p1,p2,p3] = [1e3,1e4,1e5], [n1,n2,n3] = [1e6,1e7,1e8];
+  var [ni,nm,nt] = [n1-p1, n2-p2, n3-p3], [o,om,ot] = 0.5*[n1+p1, n2+p2, n3+p3];
+  var I8 = 1e12345678;
+
+  // A point: x, y and the three quadratic monomials ½(x²+y²), ½(x²−y²), xy.
+  var up = (x,y)=>o + x*1e1 + y*1e2 + 0.5*(x*x+y*y)*ni + 0.5*(x*x-y*y)*nm + x*y*nt;
+
+  // Objects by the outer product (OPNS, grade 7).
+  var conic  = (A,B,C,D,E)=>A^B^C^D^E^om^ot,           // any conic through five points
+      circle = (A,B,C)=>A^B^C^nm^nt^om^ot,               // the x², y², xy terms forced to a circle
+      line   = (A,B)=>A^B^ni^nm^nt^om^ot;
+
+  // Versors. (Kept as separate statements: ganja's inline translator can miss
+  // operators in a multi-line declaration with comments inside it.)
+  // A rotor: the quadratic part turns by 2θ.
+  var rotor = th=>Math.E**(-th/2*1e12) * Math.E**(th*((n2^n3)-(p2^p3)));
+  // A translator by (a, b).
+  var translator = (a,b)=>Math.E**(-0.5*( a*((1e1^(ni+nm)) + (1e2^nt)) + b*((1e2^(ni-nm)) + (1e1^nt)) ));
+  // Reflection in the line through the origin at angle a: the Euclidean normal
+  // times a reflection of the extra plane about angle 2a.
+  var reflection = a=>(-Math.sin(a)*1e1 + Math.cos(a)*1e2) * (-Math.sin(2*a)*p2 + Math.cos(2*a)*p3) * (-Math.sin(2*a)*n2 + Math.cos(2*a)*n3);
+  // The sandwich product, and the geometric product for composing versors.
+  var apply = (V,X)=>V*X*~V;
+  var mul = (A,B)=>A*B;
+
+  // Exact polynomial of a grade-7 object: f(x,y) = (up(x,y) ∧ X) / I8, a quadratic.
+  // Its six coefficients come from six evaluations.
+  var quadratic = X=>{
+    var f = (x,y)=>((up(x,y)^X)*I8).s;
+    var F = f(0,0), fx = f(1,0), gx = f(-1,0), fy = f(0,1), gy = f(0,-1);
+    var D = (fx-gx)/2, A = (fx+gx)/2 - F, E = (fy-gy)/2, C = (fy+gy)/2 - F, B = f(1,1) - A - C - D - E - F;
+    return [A,B,C,D,E,F];
+  };
+
+  // GAC point → coordinates (normalized by its weight −P·n∞).
+  var coords = P=>{ var w = -(P<<ni).s; return [(P<<1e1).s/w, (P<<1e2).s/w]; };
+
+  Object.assign(GAC, {up, conic, circle, line, rotor, translator, reflection, apply, mul, quadratic, coords});
+});
+
+// --- Drawing helpers (plain numbers and CGA2D elements).
+var no2 = CGA2.Vector(0,0,-0.5,0.5), ni2 = CGA2.Vector(0,0,1,1);
+var pt2 = (x,y)=>CGA2.Vector(x,y,0,0).Add(no2).Add(ni2.Scale(0.5*(x*x+y*y)));
+var xy2 = P=>{ var w = -P.Dot(ni2).s; return [P.e1/w, P.e2/w]; };
+var toCGA2 = P=>pt2(...GAC.coords(P));
+var lineThroughOrigin = a=>no2.Wedge(CGA2.Vector(Math.cos(a),Math.sin(a),0,0)).Wedge(ni2);
+var options = { conformal: true, grid: true, lineWidth: 2, pointRadius: 1.5, fontSize: 1.3, scale: 1 };
+
+// Trace the zero set of A x² + B xy + C y² + D x + E y + F by marching squares,
+// returned as an SVG path in ganja's coordinates (x·scale, −y·scale).
+var curveSVG = (X, color)=>{
+  var [A,B,C,D,E,F] = GAC.quadratic(X), m = Math.max(...[A,B,C,D,E,F].map(Math.abs)) || 1;
+  var f = (x,y)=>(A*x*x + B*x*y + C*y*y + D*x + E*y + F)/m;
+  var sc = options.scale, R = 3/sc, N = 220, h = 2*R/N, d = "";
+  var row = [...Array(N+1)].map((_,i)=>f(-R + i*h, -R));
+  for (var j = 0; j < N; j++) {
+    var y0 = -R + j*h, y1 = y0 + h, next = [...Array(N+1)].map((_,i)=>f(-R + i*h, y1));
+    for (var i = 0; i < N; i++) {
+      var x0 = -R + i*h, x1 = x0 + h, v = [row[i], row[i+1], next[i+1], next[i]];
+      var c = [[x0,y0],[x1,y0],[x1,y1],[x0,y1]], cut = [];
+      for (var k = 0; k < 4; k++) {
+        var a = v[k], b = v[(k+1)%4];
+        if ((a < 0) != (b < 0)) { var t = a/(a-b); cut.push([c[k][0] + t*(c[(k+1)%4][0]-c[k][0]), c[k][1] + t*(c[(k+1)%4][1]-c[k][1])]); }
+      }
+      for (var k = 0; k + 1 < cut.length; k += 2)
+        d += `M${(cut[k][0]*sc).toFixed(4)},${(-cut[k][1]*sc).toFixed(4)}L${(cut[k+1][0]*sc).toFixed(4)},${(-cut[k+1][1]*sc).toFixed(4)}`;
+    }
+    row = next;
+  }
+  return `<path d="${d}" fill="none" stroke="${color}" stroke-width="${0.006*options.lineWidth}" stroke-linecap="round"/>`;
+};
+var hex = c=>'#'+(c+(1<<25)).toString(16).slice(-6);
+
+// --- The examples. Each returns { notes, items } where items is a ganja graph list;
+// CGA2D points in it can be dragged.
+var examples = {
+  conic: ()=>{
+    var P = [[-1.2,0.3],[-0.4,1.1],[0.9,0.8],[1.3,-0.5],[0.1,-0.9]].map(p=>pt2(...p));
+    var X = ()=>GAC.conic(...P.map(p=>GAC.up(...xy2(p))));
+    return {
+      notes: `<p>Five points determine a conic, and in GAC it is their outer product, like a circle through three points in CGA:</p>
+        <div class="formula">X = P₁ ∧ P₂ ∧ P₃ ∧ P₄ ∧ P₅ ∧ ō₋ ∧ ō×</div>
+        <p>A point is <code>up(x, y) = o + x e₁ + y e₂ + ½(x²+y²) n∞ + ½(x²−y²) n₋ + xy n×</code>. Wedging with ō₋ and ō× gives an object of grade 7. A point Q lies on it exactly when Q ∧ X = 0.</p>
+        <p class="hint">Drag the points. Moving one through the others changes the conic between an ellipse, a hyperbola and a pair of lines.</p>`,
+      items: [()=>curveSVG(X(), '#3060d0'), 0x444444, ...P.flatMap((p,i)=>[p, "P"+(i+1)])]
+    };
+  },
+  circle: ()=>{
+    var P = [[-1,0.2],[0.6,1],[0.9,-0.6]].map(p=>pt2(...p));
+    var X = ()=>GAC.circle(...P.map(p=>GAC.up(...xy2(p))));
+    return {
+      notes: `<p>CGA2D sits inside GAC. Adding n₋ and n× forces the x² and y² coefficients to be equal and the xy coefficient to vanish, which leaves a circle through three points:</p>
+        <div class="formula">C = P₁ ∧ P₂ ∧ P₃ ∧ n₋ ∧ n× ∧ ō₋ ∧ ō×</div>
+        <p>Replacing a point with n∞ gives a line, so every compass-and-straightedge object has a GAC form.</p>
+        <p class="hint">Drag the points.</p>`,
+      items: [()=>curveSVG(X(), '#d03030'), 0x444444, ...P.flatMap((p,i)=>[p, "P"+(i+1)])]
+    };
+  },
+  rotor: ()=>{
+    var n = +document.getElementById('n').value, th = 2*Math.PI/n, R = GAC.rotor(th);
+    var base = [[1.2,0.2],[1.6,0.7],[1.9,0.1],[1.5,-0.5],[1.0,-0.3]].map(p=>GAC.up(...p));
+    var X = GAC.conic(...base), copies = [X];
+    for (var k = 1; k < n; k++) copies.push(GAC.apply(R, copies[k-1]));
+    var Q = pt2(1.2,0.2);
+    return {
+      notes: `<p>A rotation about the origin by θ is a rotor. The quadratic coordinates ½(x²−y²) and xy turn by 2θ, so the rotor has a second factor:</p>
+        <div class="formula">R = exp(−½θ e₁₂) · exp(θ (e₇ ∧ e₈ − e₄ ∧ e₅))</div>
+        <p>It acts on the whole conic, X ↦ R X R̃, not just on its points. Here an ellipse is stepped ${n} times by 2π/${n}; the dragged point is stepped with it.</p>
+        <p class="hint">Change n; drag the point.</p>`,
+      items: [...copies.map((C,k)=>()=>curveSVG(C, k ? '#7090e0' : '#2040b0')),
+              0x444444, Q, "Q",
+              0x2a9d8f, ...[...Array(n-1)].map((_,k)=>()=>{ var P = GAC.up(...xy2(Q)); for (var j = 0; j <= k; j++) P = GAC.apply(R,P); return toCGA2(P); })]
+    };
+  },
+  reflections: ()=>{
+    var a1 = 0.15, a2 = 0.15 + Math.PI/5;
+    var V1 = GAC.reflection(a1), V2 = GAC.reflection(a2);
+    var X = GAC.conic(...[[0.6,1.2],[1.2,1.5],[1.7,1.0],[1.3,0.5],[0.8,0.7]].map(p=>GAC.up(...p)));
+    var X1 = GAC.apply(V1, X), X2 = GAC.apply(V2, X1), XR = GAC.apply(GAC.rotor(2*(a2-a1)), X);
+    var same = GAC.quadratic(X2).map((c,i,a)=>c/Math.max(...a.map(Math.abs))), ref = GAC.quadratic(XR).map((c,i,a)=>c/Math.max(...a.map(Math.abs)));
+    var err = Math.min(Math.max(...same.map((c,i)=>Math.abs(c-ref[i]))), Math.max(...same.map((c,i)=>Math.abs(c+ref[i]))));
+    return {
+      notes: `<p>Reflection in a line through the origin is a versor too, but it needs three vectors: the line's normal and a reflection of the (n₋, n×) plane at twice the angle:</p>
+        <div class="formula">V(a) = (−sin a e₁ + cos a e₂)<br>&nbsp;&nbsp;&nbsp;&nbsp;× (−sin 2a e₄ + cos 2a e₅)(−sin 2a e₇ + cos 2a e₈)</div>
+        <p>Reflecting in L₁, then L₂, is the rotation by twice the angle between them, as in CGA: V(a₂)V(a₁) = R(2(a₂ − a₁)). This is how the circle-division pages build their rotors.</p>
+        <p>X (dark) → reflected in L₁ (mid) → reflected in L₂ (light). The final conic matches R X R̃ with R = R(2π/5) to ${err.toExponential(1)}.</p>`,
+      // (a zero-length segment moves ganja's label cursor out along each line)
+      items: [0x999999, lineThroughOrigin(a1), lineThroughOrigin(a2), 0x666666,
+              ...[[a1,"L₁"],[a2,"L₂"]].flatMap(([a,l])=>{ var p = pt2(1.7*Math.cos(a), 1.7*Math.sin(a)); return [[p,p], l]; }),
+              ()=>curveSVG(X, '#1b5e20'), ()=>curveSVG(X1, '#43a047'), ()=>curveSVG(X2, '#a5d6a7')]
+    };
+  },
+  translator: ()=>{
+    var X = GAC.conic(...[[-0.6,0.4],[0,0.9],[0.6,0.4],[0.4,-0.3],[-0.4,-0.3]].map(p=>GAC.up(...p)));
+    var t = pt2(1.0,-0.8);
+    return {
+      notes: `<p>Translation by (a, b) is a translator. Its bivector pairs each Euclidean direction with the null vectors whose coefficients change as the point moves:</p>
+        <div class="formula">T = exp(−½(a(e₁∧(n∞+n₋) + e₂∧n×) + b(e₂∧(n∞−n₋) + e₁∧n×)))</div>
+        <p>Inversions are not versors in GAC, because inverting a conic generally gives a quartic. GAC keeps rotations, translations and uniform scaling.</p>
+        <p class="hint">Drag t, the translation vector.</p>`,
+      items: [()=>curveSVG(X, '#8e24aa'), ()=>curveSVG(GAC.apply(GAC.translator(...xy2(t)), X), '#ce93d8'),
+              0x444444, t, "t", 0x999999, ()=>[pt2(0,0), t]]
+    };
+  },
+  polygon: ()=>{
+    var n = +document.getElementById('n').value;
+    var Rh = GAC.reflection(Math.PI/n), Rz = GAC.reflection(0), R = GAC.mul(Rh, Rz);
+    var C = GAC.circle(GAC.up(1,0), GAC.up(0,1), GAC.up(-1,0));
+    var V = [GAC.up(1,0)];
+    for (var k = 1; k < n; k++) V.push(GAC.apply(R, V[k-1]));
+    var P = V.map(toCGA2), worst = Math.max(...V.map(v=>Math.abs(Math.hypot(...GAC.coords(v)) - 1)));
+    return {
+      notes: `<p>The ${n}-gon by rotor stepping, as in the CGA2D circle-division page, but now in GAC: R is the product of reflections in the x-axis and in the line at π/${n}, and V<sub>k+1</sub> = R V<sub>k</sub> R̃.</p>
+        <p>The vertices stay on the unit circle C = (1,0) ∧ (0,1) ∧ (−1,0) ∧ n₋ ∧ n× ∧ ō₋ ∧ ō× to ${worst.toExponential(1)}.</p>
+        <p>The angle π/${n} is supplied here, not constructed. In GAC the extra power is that conics can meet circles, which solves the cubics that the 7-gon and 9-gon need.</p>
+        <p class="hint">Change n.</p>`,
+      items: [()=>curveSVG(C, '#d03030'), 0x2a9d8f, ...P.map((p,k)=>[p, P[(k+1)%n]]), 0x444444, ...P.flatMap((p,k)=>[p, "V"+k])]
+    };
+  }
+};
+
+// --- Wiring.
+var select = document.getElementById('example'), nInput = document.getElementById('n');
+var show = ()=>{
+  try { var h = location.hash.slice(1); if (h && examples[h] && select.value != h && !show.done) select.value = h; } catch (e) {}
+  show.done = true;
+  var ex = examples[select.value]();
+  document.getElementById('nLabel').style.display = (select.value == 'rotor' || select.value == 'polygon') ? '' : 'none';
+  document.getElementById('notes').innerHTML = ex.notes;
+  var view = document.getElementById('view');
+  view.innerHTML = '';
+  view.appendChild(CGA2.graph(ex.items, options));
+  try { history.replaceState(null, '', '#' + select.value); } catch (e) {}
+};
+select.addEventListener('change', show);
+nInput.addEventListener('change', show);
+show();
+</SCRIPT>
+</BODY>
+</HTML>

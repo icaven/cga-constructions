@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<HEAD>
+  <META charset="utf-8">
+  <SCRIPT SRC="https://cdn.jsdelivr.net/npm/ganja.js@1.0.204/ganja.js"></SCRIPT>
+  <LINK rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+  <SCRIPT SRC="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></SCRIPT>
+  <LINK rel="stylesheet" href="circle_division/circle_division.css">
+  <SCRIPT>
+    // Mark the page as embedded when it is shown inside a frame.
+    try {
+      if (window.self !== window.top) document.documentElement.classList.add("embedded");
+    } catch (e) {
+      document.documentElement.classList.add("embedded");
+    }
+  </SCRIPT>
+  <title>Regular polygons by a parabola in GAC</title>
+</HEAD>
+<BODY>
+  <DIV id="controls">
+    <STRONG>GAC construction of the regular <SPAN id="titleN">7</SPAN>-gon, with Descartes' parabola</STRONG>
+
+    <LABEL>
+      Polygon:
+      <SELECT id="division">
+        <OPTION value="7" selected>7-gon</OPTION>
+        <OPTION value="9">9-gon</OPTION>
+        <OPTION value="13">13-gon</OPTION>
+        <OPTION value="19">19-gon (two cubics)</OPTION>
+        <OPTION value="14">14-gon</OPTION>
+        <OPTION value="18">18-gon</OPTION>
+        <OPTION value="26">26-gon</OPTION>
+        <OPTION value="38">38-gon</OPTION>
+      </SELECT>
+    </LABEL>
+
+    <SPAN class="stepper">
+      <LABEL for="step">Step:</LABEL>
+      <BUTTON id="stepDown" type="button" title="Previous step" aria-label="Previous step">&minus;</BUTTON>
+      <INPUT id="step" type="range" min="0" max="6" value="6">
+      <BUTTON id="stepUp" type="button" title="Next step" aria-label="Next step">+</BUTTON>
+      <SPAN id="stepValue">6</SPAN>
+    </SPAN>
+
+    <LABEL><INPUT id="showConstruction" type="checkbox" checked> show auxiliary construction</LABEL>
+    <LABEL><INPUT id="showPrevious" type="checkbox" checked> show auxiliary construction of earlier steps</LABEL>
+    <LABEL><INPUT id="showPreviousPoints" type="checkbox" checked> show points of earlier steps</LABEL>
+    <LABEL><INPUT id="showLabels" type="checkbox" checked> show point labels</LABEL>
+    <LABEL><INPUT id="labelObjects" type="checkbox"> label geometric objects and radii of the current step</LABEL>
+    <LABEL><INPUT id="showRotor" type="checkbox" checked> show rotor-stepped vertices</LABEL>
+    <LABEL><INPUT id="showCompass" type="checkbox" checked> show compass chord-stepping circles</LABEL>
+
+    <DIV class="muted">
+      Scroll to zoom about the cursor, drag to pan, double-click to reset the view.
+    </DIV>
+  </DIV>
+
+  <DIV id="opsResize" title="Drag to resize; double-click to reset"></DIV>
+  <DIV id="ops">
+    <DIV class="legend">
+      <b>GAC and CGA operations</b> (ganja syntax in brackets)<br>
+      <span class="tex">\wedge</span> join (<code>^</code>) &nbsp;
+      <span class="tex">\vee</span> meet (<code>&amp;</code>) &nbsp;
+      <span class="tex">X^{*}</span> dual (<code>!X</code>) &nbsp;
+      <span class="tex">\cdot</span> inner product (<code>|</code>) &nbsp;
+      <span class="tex">\tilde R</span> reverse (<code>~R</code>)<br>
+      Compass and straightedge work in CGA2d, which sits inside GAC; the conic step works in GAC, <span class="tex">\mathbb{R}^{5,3}</span>.<br>
+      CGA2d point: <span class="tex">P(x,y) = n_o + x\,e_1 + y\,e_2 + \tfrac12 (x^2+y^2)\, n_\infty</span>; then <span class="tex">P\cdot Q = -\tfrac12 \lvert p-q\rvert^2</span>.<br>
+      GAC point: <span class="tex">\hat P(x,y) = o + x\,e_1 + y\,e_2 + \tfrac12 (x^2+y^2)\, n_\infty + \tfrac12 (x^2-y^2)\, n_{-} + xy\, n_{\times}</span>.<br>
+      Conic through five points: <span class="tex">\hat P_1 \wedge \dots \wedge \hat P_5 \wedge \bar o_{-} \wedge \bar o_{\times}</span>; the meet of two conics is four points.<br>
+      <span class="tex">\iota</span>: CGA2d into GAC, <span class="tex">(e_1, e_2, e_3, e_4) \mapsto (e_1, e_2, -e_3, e_6)</span>; a circle with dual <span class="tex">s</span> becomes <span class="tex">\iota(s)\, I</span>.
+      <span class="tex">\pi</span>: back to CGA2d, dropping the <span class="tex">n_{-}, n_{\times}</span> parts.<br>
+      Circle centred at C with radius |P₁P₂|: <span class="tex">\big(C + (P_1\cdot P_2)\, n_\infty\big)^{*}</span>.<br>
+      <span class="tex">\operatorname{split}(T)</span>: the two points of a point pair, <span class="tex">(T \pm \sqrt{T\cdot T})\,(n_\infty \rfloor T)</span>.
+      <span class="tex">\operatorname{split}_4(Q)</span>: the four points of a point quadruple, the roots of a quartic.<br>
+      <span class="tex">\operatorname{pt}(F)</span>: the point of a flat point, <span class="tex">Y = n_o \rfloor F</span> normalized,
+      <span class="tex">P = Y + \tfrac12 (Y\cdot Y)\, n_\infty</span>.<br>
+      Orange points: centres of the step's circles, <span class="tex">s\, n_\infty\, s</span> with <span class="tex">s = C^{*}</span>.
+      Ringed points: the points of the step's point pairs (violet) and point quadruple (pink).<br>
+      Names: <span class="tex">C_X(P)</span> circle centred X through P, <span class="tex">C_X(\lvert PQ\rvert)</span> with radius |PQ|,
+      <span class="tex">\mathcal{P}</span> parabola, <span class="tex">L_{AB}</span> line, <span class="tex">B_{AB}</span> bisector,
+      <span class="tex">T</span> point pair, <span class="tex">Q_4</span> point quadruple, <span class="tex">\hat V_k</span> rotor-stepped vertex.
+    </DIV>
+    <DIV id="opsSteps"></DIV>
+  </DIV>
+
+<SCRIPT SRC="circle_division/colors.js"></SCRIPT>
+<SCRIPT SRC="circle_division/graph_view.js"></SCRIPT>
+<SCRIPT SRC="circle_division/numeric.js"></SCRIPT>
+<SCRIPT SRC="circle_division/cga2d_constructions.js"></SCRIPT>
+<SCRIPT SRC="circle_division/gac2d.js"></SCRIPT>
+<SCRIPT SRC="circle_division/cubic_towers.js"></SCRIPT>
+<SCRIPT SRC="circle_division/construction_view.js"></SCRIPT>
+<SCRIPT SRC="circle_division/ops_resize.js"></SCRIPT>
+<SCRIPT>
+// Two algebras: CGA2d for compass and straightedge (and drawing), GAC for the
+// parabola. Each is created once and shared by its modules (see circle_division/).
+const CGA2 = Algebra({ p: 3, q: 1, baseType: Float64Array }), GAC = Algebra({ p: 5, q: 3, graded: false, baseType: Float64Array });
+const K = CGA2.inline(CircleDivision.cga2d)();
+const G = GAC.inline(CircleDivision.gac)();
+const divisions = CGA2.inline(CircleDivision.cubicTowers)()(K, G);
+CGA2.inline(CircleDivision.view)()(K, divisions, { scale: 0.75 });
+</SCRIPT>

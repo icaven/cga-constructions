@@ -39,6 +39,30 @@
       white-space: nowrap;
     }
 
+    /* The step slider with − and + buttons either side. */
+    #controls .stepper {
+      display: inline-block;
+      margin: 3px 12px 3px 0;
+      white-space: nowrap;
+    }
+
+    #controls .stepper label {
+      margin: 0 4px 0 0;
+    }
+
+    #controls .stepper button {
+      width: 26px;
+      height: 22px;
+      padding: 0;
+      font: 600 15px/1 system-ui, sans-serif;
+      vertical-align: middle;
+      cursor: pointer;
+    }
+
+    #controls .stepper button:disabled {
+      cursor: default;
+    }
+
     #controls input[type="range"] {
       width: 220px;
       vertical-align: middle;
@@ -156,11 +180,13 @@
   <DIV id="controls">
     <STRONG>CGA3d: the regular 5-gon from spheres cut by the plane Π₀, with a lifted sphere for the Carlyle circle</STRONG>
     <BR>
-    <LABEL>
-      Step:
+    <SPAN class="stepper">
+      <LABEL for="step">Step:</LABEL>
+      <BUTTON id="stepDown" type="button" title="Previous step" aria-label="Previous step">&minus;</BUTTON>
       <INPUT id="step" type="range" min="0" max="5" value="5">
+      <BUTTON id="stepUp" type="button" title="Next step" aria-label="Next step">+</BUTTON>
       <SPAN id="stepValue">5</SPAN>
-    </LABEL>
+    </SPAN>
     <LABEL><INPUT id="showEarlier" type="checkbox" checked> show construction of earlier steps</LABEL>
     <LABEL><INPUT id="showSpheres" type="checkbox" checked> show the current step's spheres</LABEL>
     <LABEL><INPUT id="showLabels" type="checkbox" checked> show point labels</LABEL>
@@ -714,9 +740,21 @@ Algebra(4,1,()=>{
     }
   };
 
+  // − and + beside the slider: one step back or forward, stopping at the ends.
+  const stepDownButton = document.getElementById("stepDown");
+  const stepUpButton = document.getElementById("stepUp");
+  const stepBy = d => {
+    stepInput.value = String(Math.min(Number(stepInput.max), Math.max(0, Number(stepInput.value) + d)));
+    redraw();
+  };
+  stepDownButton.addEventListener("click", () => stepBy(-1));
+  stepUpButton.addEventListener("click", () => stepBy(1));
+
   const redraw = () => {
     clearHtmlLabels();
     stepValue.textContent = stepInput.value;
+    stepDownButton.disabled = Number(stepInput.value) <= 0;
+    stepUpButton.disabled = Number(stepInput.value) >= Number(stepInput.max);
     renderOps(Number(stepInput.value));
     canvas.update(scene);
   };
