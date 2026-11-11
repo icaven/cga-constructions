@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<HEAD>
+  <META charset="utf-8">
+  <SCRIPT SRC="https://cdn.jsdelivr.net/npm/ganja.js@1.0.204/ganja.js"></SCRIPT>
+  <LINK rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+  <SCRIPT SRC="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></SCRIPT>
+  <SCRIPT SRC="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></SCRIPT>
+  <STYLE>
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      font-family: system-ui, sans-serif;
+      overflow: hidden;
+      background: #f0f0f0;
+    }
+
+    :root {
+      --ops-width: 450px;
+    }
+
+    #controls {
+      position: fixed;
+      left: 0;
+      right: 0;
+      top: 0;
+      z-index: 10;
+      padding: 10px 12px;
+      background: rgba(255,255,255,0.96);
+      border-bottom: 1px solid #ccc;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.12);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    #controls label {
+      display: inline-block;
+      margin: 3px 12px 3px 0;
+      white-space: nowrap;
+    }
+
+    /* The step slider with − and + buttons either side. */
+    #controls .stepper {
+      display: inline-block;
+      margin: 3px 12px 3px 0;
+      white-space: nowrap;
+    }
+
+    #controls .stepper label {
+      margin: 0 4px 0 0;
+    }
+
+    #controls .stepper button {
+      width: 26px;
+      height: 22px;
+      padding: 0;
+      font: 600 15px/1 system-ui, sans-serif;
+      vertical-align: middle;
+      cursor: pointer;
+    }
+
+    #controls .stepper button:disabled {
+      cursor: default;
+    }
+
+    #controls input[type="range"] {
+      width: 220px;
+      vertical-align: middle;
+    }
+
+    #controls .muted {
+      color: #666;
+      font-size: 12px;
+    }
+
+    #view {
+      position: fixed;
+      left: 0;
+      bottom: 0;
+      right: var(--ops-width);
+    }
+
+    #view canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    #ops {
+      position: fixed;
+      right: 0;
+      bottom: 0;
+      width: var(--ops-width);
+      box-sizing: border-box;
+      overflow-y: auto;
+      padding: 8px 10px;
+      background: #fafafa;
+      border-left: 1px solid #ccc;
+      font-size: clamp(11px, calc(var(--ops-width) / 30), 24px);
+    }
+
+    #ops .legend {
+      color: #555;
+      line-height: 1.5;
+      padding-bottom: 6px;
+      margin-bottom: 8px;
+      border-bottom: 1px solid #ddd;
+    }
+
+    #ops .step {
+      margin: 0 0 6px;
+      padding: 4px 6px;
+      border-left: 3px solid transparent;
+      color: #999;
+    }
+
+    #ops .step.current {
+      color: #222;
+      background: #fff3e6;
+      border-left-color: #E07000;
+    }
+
+    #ops .step h4 {
+      margin: 0 0 3px;
+      font: 600 1em system-ui, sans-serif;
+    }
+
+    #ops .ops-lines > div {
+      margin: 2px 0;
+      overflow-x: auto;
+      overflow-y: hidden;
+    }
+
+    #ops .katex {
+      font-size: 1.05em;
+    }
+
+    #ops .tex-fallback {
+      font: 0.95em/1.5 "DejaVu Sans Mono", Menlo, Consolas, monospace;
+      white-space: pre-wrap;
+    }
+
+    /* Embedded in another page (the explainer), the legend is shown there once
+       for all the constructions. */
+    .embedded #ops .legend {
+      display: none;
+    }
+  </STYLE>
+  <SCRIPT>
+    // ganja's HTML labels (htmlText) set left/top as bare numbers, which only
+    // quirks mode accepts; this page needs standards mode for KaTeX. So when a
+    // style object gets numeric left/top through Object.assign, add "px".
+    (() => {
+      const assign = Object.assign;
+      Object.assign = function (target, ...sources) {
+        if (typeof CSSStyleDeclaration !== "undefined" && target instanceof CSSStyleDeclaration) {
+          sources = sources.map(src => {
+            const out = {};
+            for (const k in src) {
+              out[k] = (typeof src[k] === "number" && (k === "left" || k === "top")) ? src[k] + "px" : src[k];
+            }
+            return out;
+          });
+        }
+        return assign.call(Object, target, ...sources);
+      };
+    })();
+  </SCRIPT>
+  <SCRIPT>
+    // Mark the page as embedded when it is shown inside a frame.
+    try {
+      if (window.self !== window.top) document.documentElement.classList.add("embedded");
+    } catch (e) {
+      document.documentElement.classList.add("embedded");
+    }
+  </SCRIPT>
+  <title>Solids by trilateration stepping in CGA3d</title>
+</HEAD>
+<BODY>
+  <DIV id="controls">
+    <STRONG>CGA3d: a Platonic solid by trilateration stepping: S<sub>u</sub> ∨ S<sub>A</sub>(e) ∨ S<sub>B</sub>(e) gives the vertices next to A and B</STRONG>
+    <BR>
+    <LABEL for="solid">Solid:</LABEL>
+    <SELECT id="solid">
+      <OPTION value="tetrahedron">tetrahedron</OPTION>
+      <OPTION value="octahedron" selected>octahedron</OPTION>
+    </SELECT>
+    <SPAN class="stepper">
+      <LABEL for="step">Step:</LABEL>
+      <BUTTON id="stepDown" type="button" title="Previous step" aria-label="Previous step">&minus;</BUTTON>
+      <INPUT id="step" type="range" min="0" max="3" value="0">
+      <BUTTON id="stepUp" type="button" title="Next step" aria-label="Next step">+</BUTTON>
+      <SPAN id="stepValue">0</SPAN>
+    </SPAN>
+    <LABEL><INPUT id="showEarlier" type="checkbox" checked> show earlier steps' circles and point pairs</LABEL>
+    <LABEL><INPUT id="showSpheres" type="checkbox" checked> show the spheres</LABEL>
+    <LABEL><INPUT id="showLabels" type="checkbox" checked> show point labels</LABEL>
+    <DIV class="muted">
+      Drag to rotate, scroll to zoom. Blue-grey: the unit sphere S<sub>u</sub>. Orange: the current step's two edge-length
+      spheres and the circles where the three spheres cross in pairs. Purple: the point pair, split into its two points.
+    </DIV>
+  </DIV>
+
+  <DIV id="view"></DIV>
+
+  <DIV id="ops">
+    <DIV class="legend">
+      <b>CGA3d operations</b> (ganja syntax in brackets)<br>
+      <span class="tex">\wedge</span> join (<code>^</code>) &nbsp;
+      <span class="tex">\vee</span> meet (<code>&amp;</code>) &nbsp;
+      <span class="tex">X^{*}</span> dual (<code>!X</code>) &nbsp;
+      <span class="tex">\cdot</span> inner product (<code>|</code>)<br>
+      Sphere centred at C with radius |P₁P₂|: <span class="tex">S = \big(C + (P_1\cdot P_2)\, n_\infty\big)^{*}</span>.<br>
+      <span class="tex">\operatorname{split}(T)</span>: the two points of a point pair, <span class="tex">(T \pm \sqrt{T\cdot T})\,(n_\infty \rfloor T)</span>.<br>
+      Trilateration: a point at distance 1 from O and e from A and B is in <span class="tex">S_u \vee S_A(e) \vee S_B(e)</span>.
+      The two points are mirror images in the plane OAB.
+    </DIV>
+    <DIV id="opsSteps"></DIV>
+  </DIV>
+
+<SCRIPT>
+Algebra(4,1,()=>{
+
+  // ---------------------------------------------------------------------------
+  // CGA3d model
+  // ---------------------------------------------------------------------------
+  //
+  //   n∞ = e4 + e5,  no = 1/2(e5 - e4),  P(x,y,z) = no + x e1 + y e2 + z e3 + 1/2|p|² n∞
+  //
+  // ganja draws with y up. Spheres, circles and point pairs are kept in outer
+  // (OPNS) form, which ganja draws and the meet & expects. Inside Algebra(),
+  // ! is the dual (not logical not).
+
+  const ni = 1e4 + 1e5;
+  const no = 0.5*(1e5 - 1e4);
+
+  const point3 = (x, y, z) => no + x*1e1 + y*1e2 + z*1e3 + 0.5*(x*x + y*y + z*z)*ni;
+  const normalize = P => P * (1 / -(P | ni)[0]);
+
+  const xOf = P => (normalize(P) | 1e1)[0];
+  const yOf = P => (normalize(P) | 1e2)[0];
+  const zOf = P => (normalize(P) | 1e3)[0];
+
+  // Squared distance of two points: |PQ|² = -2 P·Q.
+  const dist2 = (P, Q) => -2 * (normalize(P) | normalize(Q))[0];
+
+  // ---------------------------------------------------------------------------
+  // Operation trace: helpers record their operation in LaTeX; a step's ops are
+  // those recorded between beginOps() and endOps().
+  // ---------------------------------------------------------------------------
+
+  const trace = { ops: null, names: new WeakMap(), pairs: 0 };
+  const tex = n => n.replace(/^([A-Za-z]+)(\d+)$/, "$1_{$2}").replace(/′/g, "'");
+  const nameOf = X => trace.names.get(X) || "?";
+  const named = (X, n) => {
+    if (n) trace.names.set(X, tex(n));
+    return X;
+  };
+  const record = s => {
+    if (trace.ops) trace.ops.push(s);
+  };
+  const beginOps = () => {
+    trace.ops = [];
+    trace.pairs = 0;
+  };
+  const endOps = () => {
+    const ops = trace.ops;
+    trace.ops = null;
+    return ops;
+  };
+
+  // ---------------------------------------------------------------------------
+  // Compass and meets in CGA3d
+  // ---------------------------------------------------------------------------
+
+  const given = (x, y, z, n, coordinates) => {
+    record(tex(n) + " = P" + coordinates);
+    return named(point3(x, y, z), n);
+  };
+
+  // Compass in 3D: the sphere centred at C with radius |P1 P2|.
+  const sphere = (C, P1, P2, n) => {
+    const through = P1 === C;
+    const radius = "\\lvert " + nameOf(P1) + nameOf(P2) + "\\rvert";
+    const name = tex(n || ("S_{" + nameOf(C) + "}(" + (through ? nameOf(P2) : radius) + ")"));
+    record(name + " = \\big(" + nameOf(C) + " + (" + nameOf(P1) + " \\cdot " + nameOf(P2) + ")\\, n_\\infty\\big)^{*}"
+      + (through ? "" : "\\qquad \\text{radius } " + radius));
+    return named(!(C + (P1 | P2)[0]*ni), name);
+  };
+
+  // Centre of a sphere S (outer form): with s = S* its dual vector, the
+  // centre is the sandwich s n∞ s (n∞ reflected in the sphere).
+  const centerOf = S => {
+    const s = !S;
+    return normalize(s * ni * s).Grade(1);
+  };
+
+  // Point pairs and their points.
+  const splitPointPair = T => {
+    const s2 = (T*T)[0];
+    if (s2 < -1E-10) return [];
+    const s = Math.sqrt(Math.max(0, s2));
+    const D = ni << T;
+    return [((T + s)*D).Grade(1), ((T - s)*D).Grade(1)].map(normalize);
+  };
+
+  const meetName = () => {
+    trace.pairs = trace.pairs + 1;
+    return "T_{" + trace.pairs + "}";
+  };
+
+  // Choosing one point of a pair.
+  const choose = (points, by, n) => {
+    const [word, axis] = by.split(" ");
+    const f = axis === "x" ? xOf : axis === "y" ? yOf : zOf;
+    const larger = word === "larger";
+    const P = points.reduce((a, b) => (larger ? f(b) > f(a) : f(b) < f(a)) ? b : a);
+    if (n) record(tex(n) + " = " + nameOf(P) + "\\qquad \\text{" + word + " } " + axis);
+    return named(P, n);
+  };
+
+  // The point of a pair that is not one of the vertices already found.
+  const notFound = (points, found, n) => {
+    const gap = P => Math.min(...found.map(Q => dist2(P, Q)));
+    const P = points.reduce((a, b) => gap(b) > gap(a) ? b : a);
+    if (n) record(tex(n) + " = " + nameOf(P) + "\\qquad \\text{the point not already found}");
+    return named(P, n);
+  };
+
+  // ---------------------------------------------------------------------------
+  // Trilateration stepping
+  // ---------------------------------------------------------------------------
+  //
+  // The solid has circumradius 1. Given O and two adjacent vertices V0, V1 (so
+  // the edge length e = |V0V1| is given too), a vertex next to known vertices A
+  // and B is a point of S_u ∨ S_A(e) ∨ S_B(e): on the unit sphere, e from A
+  // and e from B. The meet is a point pair, mirror images in the plane OAB.
+  // The tetrahedron needs both points (V2 and V3). The octahedron's pair holds
+  // one new vertex and one found already, except for the first step.
+
+  const SOLIDS = {
+    tetrahedron: {
+      v0: [0, 1, 0, "(0,\\, 1,\\, 0)"],
+      v1: [2*Math.SQRT2/3, -1/3, 0, "\\big(\\tfrac{2\\sqrt2}{3},\\, -\\tfrac13,\\, 0\\big)"],
+      // [A, B, the new vertices as [name, rule]]
+      moves: [[0, 1, [["V2", "larger z"], ["V3", "smaller z"]]]],
+      titles: ["Trilateration from V₀ and V₁: both points of the pair are vertices, V₂ and V₃ (the other two vertices of the tetrahedron)"]
+    },
+    octahedron: {
+      v0: [0, 1, 0, "(0,\\, 1,\\, 0)"],
+      v1: [1, 0, 0, "(1,\\, 0,\\, 0)"],
+      moves: [
+        [0, 1, [["V2", "larger z"], ["V3", "smaller z"]]],
+        [0, 2, [["V4", "new"]]],
+        [1, 2, [["V5", "new"]]]
+      ],
+      titles: [
+        "Trilateration from V₀ and V₁: both points of the pair are vertices, V₂ and V₃",
+        "Trilateration from V₀ and V₂: the pair is V₁ (found already) and V₄; keep the new one",
+        "Trilateration from V₁ and V₂: the pair is V₀ (found already) and V₅; keep the new one"
+      ]
+    }
+  };
+
+  const construct = solid => {
+    const spec = SOLIDS[solid];
+    const steps = [];
+
+    // Step 0: O, the adjacent vertices V0 and V1, the edge length and S_u.
+    beginOps();
+    const O = given(0, 0, 0, "O", "(0,\\, 0,\\, 0)");
+    const V0 = given(...spec.v0.slice(0, 3), "V0", spec.v0[3]);
+    const V1 = given(...spec.v1.slice(0, 3), "V1", spec.v1[3]);
+    record("e = \\lvert V_{0}V_{1}\\rvert \\qquad \\text{the edge length}");
+    const Su = sphere(O, O, V0, "S_u");
+    steps.push({
+      title: "Given O and two adjacent vertices V₀, V₁ on the unit sphere S_u; their distance is the edge length e",
+      ops: endOps(),
+      spheres: [], circles: [], pairs: [],
+      points: [{ p: O, label: "O", vertex: false }, { p: V0, label: "V0", vertex: true }, { p: V1, label: "V1", vertex: true }]
+    });
+
+    const vertices = [V0, V1];
+    spec.moves.forEach(([a, b, news], k) => {
+      beginOps();
+      const A = vertices[a], B = vertices[b];
+      const SA = sphere(A, V0, V1, "S_{" + nameOf(A) + "}(e)");
+      const SB = sphere(B, V0, V1, "S_{" + nameOf(B) + "}(e)");
+      const name = meetName();
+      record(name + " = S_u \\vee " + nameOf(SA) + " \\vee " + nameOf(SB));
+      const pair = named(((Su & SA) & SB), name);
+      const points = splitPointPair(pair).map(P => named(P, "\\operatorname{split}(" + name + ")"));
+      const found = vertices.slice();
+      const fresh = news.map(([n, rule]) => {
+        const P = rule === "new" ? notFound(points, found, n) : choose(points, rule, n);
+        vertices.push(P);
+        return { p: P, label: n, vertex: true };
+      });
+      steps.push({
+        title: spec.titles[k],
+        ops: endOps(),
+        spheres: [SA, SB],
+        // Where the three spheres cross in pairs (drawn only).
+        circles: [Su & SA, Su & SB, SA & SB],
+        pairs: [pair],
+        points: fresh
+      });
+    });
+
+    return { steps, Su, e2: dist2(V0, V1) };
+  };
+
+  // ---------------------------------------------------------------------------
+  // Rendering
+  // ---------------------------------------------------------------------------
+
+  const solidInput = document.getElementById("solid");
+  const stepInput = document.getElementById("step");
+  const stepValue = document.getElementById("stepValue");
+  const showEarlierInput = document.getElementById("showEarlier");
+  const showSpheresInput = document.getElementById("showSpheres");
+  const showLabelsInput = document.getElementById("showLabels");
+
+  let construction = construct(solidInput.value);
+  stepInput.max = String(construction.steps.length - 1);
+  stepInput.value = stepInput.max;
+
+  const subscriptDigits = "₀₁₂₃₄₅₆₇₈₉";
+  const subscript = text => text.replace(/([A-Z][̂′]?)(\d+)/g,
+    (m, name, digits) => name + digits.split("").map(d => subscriptDigits[Number(d)]).join(""));
+
+  // Typeset LaTeX with KaTeX; without it, show the LaTeX source.
+  const renderTex = (src, el) => {
+    if (window.katex) {
+      try {
+        window.katex.render(src, el, { throwOnError: false });
+        return;
+      } catch (e) {
+        console.warn("KaTeX could not render:", e);
+      }
+    }
+    el.textContent = src;
+    el.classList.add("tex-fallback");
+  };
+  document.querySelectorAll("#ops .tex").forEach(el => renderTex(el.textContent, el));
+
+  const opsSteps = document.getElementById("opsSteps");
+  const renderOps = current => {
+    opsSteps.textContent = "";
+    let currentElement = null;
+    for (let i = 0; i <= current; i++) {
+      const s = construction.steps[i];
+      const div = document.createElement("div");
+      div.className = i === current ? "step current" : "step";
+      const h = document.createElement("h4");
+      h.textContent = "Step " + i + ": " + s.title;
+      const lines = document.createElement("div");
+      lines.className = "ops-lines";
+      s.ops.forEach(op => {
+        const line = document.createElement("div");
+        renderTex(op, line);
+        lines.appendChild(line);
+      });
+      div.appendChild(h);
+      div.appendChild(lines);
+      opsSteps.appendChild(div);
+      if (i === current) currentElement = div;
+    }
+    if (currentElement && currentElement.scrollIntoView) currentElement.scrollIntoView({ block: "nearest" });
+  };
+
+  // The scene, rebuilt from the controls whenever ganja redraws. It refills
+  // one persistent list: ganja attaches its HTML label elements to that list,
+  // so a new list each frame would create new label elements every frame.
+  const sceneList = [];
+  const scene = () => {
+    const step = Number(stepInput.value);
+    const out = sceneList;
+    out.length = 0;
+    const points = [];
+
+    for (let i = 0; i <= step; i++) {
+      const s = construction.steps[i];
+      const isCurrent = i === step;
+      if (isCurrent || showEarlierInput.checked) {
+        out.push(isCurrent ? 0xE07000 : 0xBBBBBB, ...s.circles);
+        out.push(0x7777CC, ...s.pairs);
+      }
+      s.points.forEach(q => points.push(q));
+    }
+
+    // Edges: the found vertices at the edge length from each other.
+    const vertices = points.filter(q => q.vertex).map(q => q.p);
+    const edges = [];
+    vertices.forEach((P, i) => vertices.slice(i + 1).forEach(Q => {
+      if (Math.abs(dist2(P, Q) - construction.e2) < 1E-4) edges.push([P, Q]);
+    }));
+    if (edges.length) out.push(0x2277DD, ...edges);
+
+    points.forEach(q => {
+      out.push(q.vertex ? 0x333333 : 0x999999, q.p);
+      if (showLabelsInput.checked) out.push(subscript(q.label));
+    });
+
+    // The two edge-length spheres' centres, in orange like their circles.
+    const current = construction.steps[step].spheres;
+    if (current.length) out.push(0xE07000, ...current.map(centerOf));
+
+    // Transparent objects last: the unit sphere, then the current spheres.
+    if (showSpheresInput.checked) {
+      out.push(0xE0A0C0F0, construction.Su);
+      if (current.length) out.push(0xD0F0A860, ...current);
+    }
+    return out;
+  };
+
+  const view = document.getElementById("view");
+  const placeView = () => {
+    view.style.top = document.getElementById("controls").offsetHeight + "px";
+    document.getElementById("ops").style.top = view.style.top;
+  };
+  placeView();
+
+  const graphOptions = { conformal: true, gl: true, grid: false, htmlText: true, h: 0.5, p: -0.4, z: 5 };
+  const canvas = this.graph(scene, graphOptions);
+  view.appendChild(canvas);
+
+  // ganja keeps one HTML label element per scene position and never removes
+  // them; clear them all before a redraw so labels of another step vanish.
+  const clearHtmlLabels = () => {
+    for (let i = 0; i < 4000; i++) {
+      [sceneList["_" + i], canvas["_" + i]].forEach(div => {
+        if (div) { div.innerHTML = ""; div.last = undefined; }
+      });
+    }
+  };
+
+  // − and + beside the slider: one step back or forward, stopping at the ends.
+  const stepDownButton = document.getElementById("stepDown");
+  const stepUpButton = document.getElementById("stepUp");
+  const stepBy = d => {
+    stepInput.value = String(Math.min(Number(stepInput.max), Math.max(0, Number(stepInput.value) + d)));
+    redraw();
+  };
+  stepDownButton.addEventListener("click", () => stepBy(-1));
+  stepUpButton.addEventListener("click", () => stepBy(1));
+
+  const redraw = () => {
+    clearHtmlLabels();
+    stepValue.textContent = stepInput.value;
+    stepDownButton.disabled = Number(stepInput.value) <= 0;
+    stepUpButton.disabled = Number(stepInput.value) >= Number(stepInput.max);
+    renderOps(Number(stepInput.value));
+    canvas.update(scene);
+  };
+  [stepInput, showEarlierInput, showSpheresInput, showLabelsInput].forEach(el => {
+    el.addEventListener("input", redraw);
+    el.addEventListener("change", redraw);
+  });
+  solidInput.addEventListener("change", () => {
+    construction = construct(solidInput.value);
+    stepInput.max = String(construction.steps.length - 1);
+    stepInput.value = stepInput.max;
+    redraw();
+  });
+  window.addEventListener("resize", () => { placeView(); canvas.update(scene); });
+  redraw();
+});
+</SCRIPT>
+</BODY>

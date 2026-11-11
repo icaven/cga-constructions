@@ -435,12 +435,19 @@ Algebra(4,1,()=>{
     return named(X, n);
   };
 
+  // The point of a pair that is not P (the pair is P and one other point).
+  const otherThan = (points, P, n) => {
+    const X = points.reduce((a, b) => -(b | P)[0] > -(a | P)[0] ? b : a);
+    if (n) record(tex(n) + " = " + nameOf(X) + "\\qquad \\text{the point that is not } " + nameOf(P));
+    return named(X, n);
+  };
+
   // The circle a sphere S makes in the plane through line L and O (for
   // drawing a stand-up: it passes through both points of L ∨ S). Display only.
   const origin = point3(0, 0, 0);
   const lineCircle = (S, L) => S & (L ^ origin);
 
-  // Method 1: lift C by the in-plane length |P1 P2|. The vertical line
+  // Lift A: lift C by the in-plane length |P1 P2|. The vertical line
   // through C meets the sphere centred at C with radius |P1 P2| in a pair
   // symmetric in Π0; the higher point is C lifted by that length.
   const lift = (C, P1, P2, n, prebuilt) => {
@@ -452,10 +459,10 @@ Algebra(4,1,()=>{
   };
 
   // ---------------------------------------------------------------------------
-  // The Platonic solids (Euclid XIII.13-17, route 1)
+  // The Platonic solids (Euclid XIII.13-17, method 1)
   // ---------------------------------------------------------------------------
   //
-  // Every vertex comes from "standing up" a length on a line (method 1): the
+  // Every vertex comes from "standing up" a length on a line (lift A): the
   // line meets a sphere centred on it, and the point pair gives both signs.
   // In the floor coordinates (u, v, height h), before scaling:
   //
@@ -622,7 +629,7 @@ Algebra(4,1,()=>{
     const xAxis = lineThrough(O, V0, "L_x");
     const Su = sphere(O, O, V0, "S_u");
     const Qmeet = intersect(xAxis, Su);
-    const Q = choose(Qmeet.points, "smaller u", "Q");
+    const Q = otherThan(Qmeet.points, V0, "Q");
     steps.push({
       title: "Given Π₀, O, V₀: the x-axis meets the unit sphere again at Q",
       ops: endOps(),
@@ -661,7 +668,7 @@ Algebra(4,1,()=>{
       beginOps();
       const L = lift(Qp, O, V0, "Q^{\\uparrow}", preQ && preQ[0]);
       steps.push({
-        title: "Method 1: stand |OV₀| up on the vertical line through Q′ to lift Q′ to Q↑",
+        title: "Lift A: stand |OV₀| up on the vertical line through Q′ to lift Q′ to Q↑",
         ops: endOps(),
         spheres: [L.sphere], meets: [L.circle], circles: [L.circle], lines: [L.vertical], pairs: [L.pair], segments: [[O, V0], [Qp, L.lifted]],
         points: [{ p: L.lifted, label: "Q↑" }]
@@ -684,7 +691,7 @@ Algebra(4,1,()=>{
       beginOps();
       const Sphi = sphere(O, O, Hp);
       const Gmeet = intersect(xAxis, Sphi);
-      const G = choose(Gmeet.points, "larger u", "G");
+      const G = otherThan(Gmeet.points, Hp, "G");
       steps.push({
         title: "The sphere at O through H′ meets the x-axis again at G = (φ, 0)",
         ops: endOps(),
@@ -840,7 +847,7 @@ Algebra(4,1,()=>{
       beginOps();
       const SH = sphere(O, O, H);
       const mx = intersect(xAxis, SH), my = intersect(yAxis, SH);
-      const K = choose(mx.points, "smaller u", "K");
+      const K = otherThan(mx.points, H, "K");
       const N = choose(my.points, "larger v", "N"), Np = choose(my.points, "smaller v", "N′");
       steps.push({
         title: "The sphere at O through H (radius 1/φ) meets the axes at K = (−1/φ, 0) and N, N′ = (0, ±1/φ)",

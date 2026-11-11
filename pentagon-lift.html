@@ -396,12 +396,19 @@ Algebra(4,1,()=>{
     return named(X, n);
   };
 
+  // The point of a pair that is not P (the pair is P and one other point).
+  const otherThan = (points, P, n) => {
+    const X = points.reduce((a, b) => -(b | P)[0] > -(a | P)[0] ? b : a);
+    if (n) record(tex(n) + " = " + nameOf(X) + "\\qquad \\text{the point that is not } " + nameOf(P));
+    return named(X, n);
+  };
+
   // The circle a sphere S makes in the plane through line L and O (for
   // drawing a stand-up: it passes through both points of L ∨ S). Display only.
   const origin = point3(0, 0, 0);
   const lineCircle = (S, L) => S & (L ^ origin);
 
-  // Method 1: lift C by the in-plane length |P1 P2|. The vertical line
+  // Lift A: lift C by the in-plane length |P1 P2|. The vertical line
   // through C meets the sphere centred at C with radius |P1 P2| in a pair
   // symmetric in Π0; the higher point is C lifted by that length.
   const lift = (C, P1, P2, n) => {
@@ -423,7 +430,7 @@ Algebra(4,1,()=>{
   // Here that circle is the cut of a lifted sphere. By Pythagoras
   // |Q′A|² = |Q′V0|² - |OV0|² (9/4 - 1 = 5/4), so a sphere of radius
   // ρ = |Q′V0| centred at Q′ lifted by h = |OV0| cuts Π0 in exactly the Carlyle
-  // circle. Both lengths are already in the plane, so the lift is method 1.
+  // circle. Both lengths are already in the plane, so lift A applies.
 
   const construct = () => {
     const steps = [];
@@ -436,7 +443,7 @@ Algebra(4,1,()=>{
     const xAxis = lineThrough(O, V0, "L_x");
     const Su = sphere(O, O, V0, "S_u");
     const Qmeet = intersect(xAxis, Su);
-    const Q = choose(Qmeet.points, "smaller u", "Q");
+    const Q = otherThan(Qmeet.points, V0, "Q");
     steps.push({
       title: "Given Π₀, O, V₀: the x-axis meets the unit sphere again at Q",
       ops: endOps(),
@@ -468,12 +475,12 @@ Algebra(4,1,()=>{
       points: [{ p: Qp, label: "Q′" }]
     });
 
-    // Step 3 (method 1): lift Q′ by the in-plane length |OV0|.
+    // Step 3 (lift A): lift Q′ by the in-plane length |OV0|.
     beginOps();
     const L = lift(Qp, O, V0, "Q^{\\uparrow}");
     record("h(Q^{\\uparrow}) = \\lvert OV_{0}\\rvert = 1");
     steps.push({
-      title: "Method 1: stand |OV₀| up on the vertical line through Q′ to lift Q′ to Q↑",
+      title: "Lift A: stand |OV₀| up on the vertical line through Q′ to lift Q′ to Q↑",
       ops: endOps(),
       spheres: [L.sphere], circles: [L.circle], lines: [L.vertical], pairs: [L.pair], segments: [[O, V0], [Qp, L.lifted]],
       points: [{ p: L.lifted, label: "Q↑" }]

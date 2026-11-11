@@ -12,7 +12,7 @@ CircleDivision.cga2dTowers = () => K => {
   const { ni, no, point, normalize, trace, tex, nameOf, named, record, beginOps, endOps, quietly,
           given, lineEnds, lineThrough, circleCenterRadius, circleCenterThrough, centerOf,
           flatPointToPoint, splitPointPair, meet, intersect, linePairs, lineThroughPair,
-          pointOfLines, bisect, xOf, yOf, choose, fartherFrom, mirror, rotorBetween, rotate, carlyleRoots,
+          pointOfLines, bisect, xOf, yOf, choose, fartherFrom, otherThan, mirror, rotorBetween, rotate, carlyleRoots,
           frame, polygonFromCosine, regularPolygonConstruction } = K;
 
   // Stage 2 for n = 5.
@@ -276,7 +276,7 @@ CircleDivision.cga2dTowers = () => K => {
       const { A, yAxis, unit } = F;
       record("V_{1} = A = \\big(\\cos\\tfrac{2\\pi}{4},\\, \\sin\\tfrac{2\\pi}{4}\\big)");
       const meet = intersect(yAxis, unit);
-      const Vlast = choose(meet.points, "smaller y", last);
+      const Vlast = otherThan(meet.points, A, last);
       return {
         V1: A,
         Vlast,

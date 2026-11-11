@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<HEAD>
+  <META charset="utf-8">
+  <SCRIPT SRC="https://cdn.jsdelivr.net/npm/ganja.js@1.0.204/ganja.js"></SCRIPT>
+  <LINK rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+  <SCRIPT SRC="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></SCRIPT>
+  <SCRIPT SRC="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></SCRIPT>
+  <STYLE>
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      font-family: system-ui, sans-serif;
+      overflow: hidden;
+      background: #f0f0f0;
+    }
+
+    :root {
+      --ops-width: 450px;
+    }
+
+    #controls {
+      position: fixed;
+      left: 0;
+      right: 0;
+      top: 0;
+      z-index: 10;
+      padding: 10px 12px;
+      background: rgba(255,255,255,0.96);
+      border-bottom: 1px solid #ccc;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.12);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    #controls label {
+      display: inline-block;
+      margin: 3px 12px 3px 0;
+      white-space: nowrap;
+    }
+
+    /* The step slider with − and + buttons either side. */
+    #controls .stepper {
+      display: inline-block;
+      margin: 3px 12px 3px 0;
+      white-space: nowrap;
+    }
+
+    #controls .stepper label {
+      margin: 0 4px 0 0;
+    }
+
+    #controls .stepper button {
+      width: 26px;
+      height: 22px;
+      padding: 0;
+      font: 600 15px/1 system-ui, sans-serif;
+      vertical-align: middle;
+      cursor: pointer;
+    }
+
+    #controls .stepper button:disabled {
+      cursor: default;
+    }
+
+    #controls input[type="range"] {
+      width: 220px;
+      vertical-align: middle;
+    }
+
+    #controls .muted {
+      color: #666;
+      font-size: 12px;
+    }
+
+    #view {
+      position: fixed;
+      left: 0;
+      bottom: 0;
+      right: var(--ops-width);
+    }
+
+    #view canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    #ops {
+      position: fixed;
+      right: 0;
+      bottom: 0;
+      width: var(--ops-width);
+      box-sizing: border-box;
+      overflow-y: auto;
+      padding: 8px 10px;
+      background: #fafafa;
+      border-left: 1px solid #ccc;
+      font-size: clamp(11px, calc(var(--ops-width) / 30), 24px);
+    }
+
+    #ops .legend {
+      color: #555;
+      line-height: 1.5;
+      padding-bottom: 6px;
+      margin-bottom: 8px;
+      border-bottom: 1px solid #ddd;
+    }
+
+    #ops .step {
+      margin: 0 0 6px;
+      padding: 4px 6px;
+      border-left: 3px solid transparent;
+      color: #999;
+    }
+
+    #ops .step.current {
+      color: #222;
+      background: #fff3e6;
+      border-left-color: #E07000;
+    }
+
+    #ops .step h4 {
+      margin: 0 0 3px;
+      font: 600 1em system-ui, sans-serif;
+    }
+
+    #ops .ops-lines > div {
+      margin: 2px 0;
+      overflow-x: auto;
+      overflow-y: hidden;
+    }
+
+    #ops .katex {
+      font-size: 1.05em;
+    }
+
+    #ops .tex-fallback {
+      font: 0.95em/1.5 "DejaVu Sans Mono", Menlo, Consolas, monospace;
+      white-space: pre-wrap;
+    }
+
+    /* Embedded in another page (the explainer), the legend is shown there once
+       for all the constructions. */
+    .embedded #ops .legend {
+      display: none;
+    }
+  </STYLE>
+  <SCRIPT>
+    // ganja's HTML labels (htmlText) set left/top as bare numbers, which only
+    // quirks mode accepts; this page needs standards mode for KaTeX. So when a
+    // style object gets numeric left/top through Object.assign, add "px".
+    (() => {
+      const assign = Object.assign;
+      Object.assign = function (target, ...sources) {
+        if (typeof CSSStyleDeclaration !== "undefined" && target instanceof CSSStyleDeclaration) {
+          sources = sources.map(src => {
+            const out = {};
+            for (const k in src) {
+              out[k] = (typeof src[k] === "number" && (k === "left" || k === "top")) ? src[k] + "px" : src[k];
+            }
+            return out;
+          });
+        }
+        return assign.call(Object, target, ...sources);
+      };
+    })();
+  </SCRIPT>
+  <SCRIPT>
+    // Mark the page as embedded when it is shown inside a frame.
+    try {
+      if (window.self !== window.top) document.documentElement.classList.add("embedded");
+    } catch (e) {
+      document.documentElement.classList.add("embedded");
+    }
+  </SCRIPT>
+  <title>Solids by reflection groups in CGA3d</title>
+</HEAD>
+<BODY>
+  <DIV id="controls">
+    <STRONG>CGA3d: a Platonic solid as the orbit of a seed point under a reflection group: X&prime; = m X m</STRONG>
+    <BR>
+    <LABEL for="solid">Solid:</LABEL>
+    <SELECT id="solid">
+      <OPTION value="tetrahedron">tetrahedron (A₃)</OPTION>
+      <OPTION value="octahedron" selected>octahedron (B₃)</OPTION>
+      <OPTION value="cube">cube (B₃)</OPTION>
+      <OPTION value="icosahedron">icosahedron (H₃)</OPTION>
+      <OPTION value="dodecahedron">dodecahedron (H₃)</OPTION>
+    </SELECT>
+    <SPAN class="stepper">
+      <LABEL for="step">Step:</LABEL>
+      <BUTTON id="stepDown" type="button" title="Previous step" aria-label="Previous step">&minus;</BUTTON>
+      <INPUT id="step" type="range" min="0" max="3" value="0">
+      <BUTTON id="stepUp" type="button" title="Next step" aria-label="Next step">+</BUTTON>
+      <SPAN id="stepValue">0</SPAN>
+    </SPAN>
+    <LABEL><INPUT id="showEdges" type="checkbox" checked> show edges</LABEL>
+    <LABEL><INPUT id="showSphere" type="checkbox"> show the unit sphere</LABEL>
+    <LABEL><INPUT id="showLabels" type="checkbox" checked> show point labels</LABEL>
+    <DIV class="muted">
+      Drag to rotate, scroll to zoom. The three mirror planes through O are Π₁ (red), Π₂ (green) and Π₃ (blue), with unit
+      normal vectors m₁, m₂, m₃; the current step's mirror plane is the stronger colour. Orange: the points the current step adds, with the segment from each to the point it
+      reflects. Blue lines: edges.
+    </DIV>
+  </DIV>
+
+  <DIV id="view"></DIV>
+
+  <DIV id="ops">
+    <DIV class="legend">
+      <b>CGA3d operations</b> (ganja syntax in brackets)<br>
+      A mirror plane through O with unit normal <span class="tex">m</span> is the vector
+      <span class="tex">m = m_x e_1 + m_y e_2 + m_z e_3</span>; the mirror plane <span class="tex">\Pi = m^{*}</span> is the set of points with <span class="tex">X\cdot m = 0</span>, and <span class="tex">\Pi_1, \Pi_2, \Pi_3</span> are the three mirrors.<br>
+      Reflection of a point: <span class="tex">X' = m\, X\, m</span> (a versor sandwich, up to sign; the point is then
+      normalized).<br>
+      The solid is the orbit of a seed point on the line where two mirrors meet, so the third mirror moves it. The mirrors
+      of <span class="tex">A_3</span>, <span class="tex">B_3</span> and <span class="tex">H_3</span> meet at
+      <span class="tex">\pi/3, \pi/3</span>; <span class="tex">\pi/3, \pi/4</span>; <span class="tex">\pi/3, \pi/5</span>
+      (neighbouring mirrors).
+    </DIV>
+    <DIV id="opsSteps"></DIV>
+  </DIV>
+
+<SCRIPT>
+Algebra(4,1,()=>{
+
+  // ---------------------------------------------------------------------------
+  // CGA3d model
+  // ---------------------------------------------------------------------------
+  //
+  //   n∞ = e4 + e5,  no = 1/2(e5 - e4),  P(x,y,z) = no + x e1 + y e2 + z e3 + 1/2|p|² n∞
+  //
+  // ganja draws with y up. A mirror plane through O with unit normal (x,y,z)
+  // is the grade-1 vector m = x e1 + y e2 + z e3 (the plane m*, in outer form
+  // !m, is what ganja draws). Inside Algebra(), ! is the dual (not logical not).
+
+  const ni = 1e4 + 1e5;
+  const no = 0.5*(1e5 - 1e4);
+
+  const point3 = (x, y, z) => no + x*1e1 + y*1e2 + z*1e3 + 0.5*(x*x + y*y + z*z)*ni;
+  const normalize = P => P * (1 / -(P | ni)[0]);
+  const vector3 = (x, y, z) => x*1e1 + y*1e2 + z*1e3;
+
+  const xOf = P => (normalize(P) | 1e1)[0];
+  const yOf = P => (normalize(P) | 1e2)[0];
+  const zOf = P => (normalize(P) | 1e3)[0];
+
+  // Squared distance of two points: |PQ|² = -2 P·Q.
+  const dist2 = (P, Q) => -2 * (normalize(P) | normalize(Q))[0];
+
+  // ---------------------------------------------------------------------------
+  // Operation trace: helpers record their operation in LaTeX; a step's ops are
+  // those recorded between beginOps() and endOps().
+  // ---------------------------------------------------------------------------
+
+  const trace = { ops: null };
+  const record = s => {
+    if (trace.ops) trace.ops.push(s);
+  };
+  const beginOps = () => {
+    trace.ops = [];
+  };
+  const endOps = () => {
+    const ops = trace.ops;
+    trace.ops = null;
+    return ops;
+  };
+
+  // ---------------------------------------------------------------------------
+  // The three reflection groups
+  // ---------------------------------------------------------------------------
+  //
+  // Each group is generated by the reflections in three mirror planes through
+  // O, given by their normals (the simple roots). The mirrors meet at
+  //   A3: π/3, π/3 (neighbours), π/2 (the others)
+  //   B3: π/3, π/4
+  //   H3: π/3, π/5, where the roots involve φ = (1+√5)/2.
+  // The solid is the orbit of a seed on the line where two mirrors meet, with
+  // the third not containing it: the seed is the cross product of those two
+  // normals.
+
+  const PHI = (1 + Math.sqrt(5)) / 2;
+  const GROUPS = {
+    A3: {
+      roots: [[1, -1, 0], [0, 1, -1], [-1, -1, 0]],
+      texts: ["\\tfrac{1}{\\sqrt2}(1,\\,-1,\\,0)", "\\tfrac{1}{\\sqrt2}(0,\\,1,\\,-1)", "\\tfrac{1}{\\sqrt2}(-1,\\,-1,\\,0)"]
+    },
+    B3: {
+      roots: [[1, -1, 0], [0, 1, -1], [0, 0, 1]],
+      texts: ["\\tfrac{1}{\\sqrt2}(1,\\,-1,\\,0)", "\\tfrac{1}{\\sqrt2}(0,\\,1,\\,-1)", "(0,\\,0,\\,1)"]
+    },
+    H3: {
+      roots: [[-1/PHI, -1, -PHI], [0, 1, 0], [1, -PHI, 1/PHI]],
+      texts: ["\\tfrac12(-1/\\varphi,\\,-1,\\,-\\varphi)", "(0,\\,1,\\,0)", "\\tfrac12(1,\\,-\\varphi,\\,1/\\varphi)"]
+    }
+  };
+  // The seed lies on the intersection of mirrors i and j.
+  const SOLIDS = {
+    tetrahedron: { group: "A3", pair: [0, 1] },
+    octahedron: { group: "B3", pair: [1, 2] },
+    cube: { group: "B3", pair: [0, 1] },
+    icosahedron: { group: "H3", pair: [1, 2] },
+    dodecahedron: { group: "H3", pair: [0, 1] }
+  };
+
+  const SUB = ["₁", "₂", "₃"];
+  const unit = v => { const n = Math.hypot(...v); return v.map(c => c / n); };
+  const cross = (a, b) => [a[1]*b[2] - a[2]*b[1], a[2]*b[0] - a[0]*b[2], a[0]*b[1] - a[1]*b[0]];
+
+  const construct = solid => {
+    const spec = SOLIDS[solid];
+    const group = GROUPS[spec.group];
+    const roots = group.roots.map(unit);
+    const steps = [];
+
+    // Step 0: the mirrors and the seed.
+    beginOps();
+    if (spec.group === "H3") record("\\varphi = (1 + \\sqrt5)/2");
+    const mirrors = roots.map((r, i) => {
+      record("m_{" + (i + 1) + "} = " + group.texts[i] + "\\cdot(e_1, e_2, e_3)");
+      return vector3(...r);
+    });
+    const planes = mirrors.map((m, i) => { record("\\Pi_{" + (i + 1) + "} = m_{" + (i + 1) + "}^{*} \\qquad \\text{mirror plane " + (i + 1) + "}"); return !m; });
+    const [i, j] = spec.pair;
+    const axis = unit(cross(roots[i], roots[j]));
+    record("X_{0} = P(\\text{the line } \\Pi_{" + (i + 1) + "} \\vee \\Pi_{" + (j + 1) + "}\\text{, unit distance from } O)");
+    const seed = point3(...axis);
+    const O = point3(0, 0, 0);
+    steps.push({
+      title: "Given the mirrors m₁, m₂, m₃ of " + spec.group + " and a seed X₀ on the line where m" + SUB[i] + " and m" + SUB[j] + " meet",
+      ops: endOps(),
+      mirror: -1, new: [], points: [{ p: seed, label: "X0", from: null }]
+    });
+
+    // Then reflect every point in m1, m2, m3, m1, ... adding the images that
+    // are new, until three reflections in a row add nothing.
+    const found = [seed];
+    const isNew = P => found.every(Q => dist2(P, Q) > 1E-3);
+    let k = 0, idle = 0;
+    while (idle < 3 && k < 60) {
+      const j2 = k % 3;
+      k++;
+      const m = mirrors[j2];
+      const fresh = [];
+      found.slice().forEach((P, n) => {
+        const Q = normalize(m * P * m);
+        if (isNew(Q) && fresh.every(f => dist2(f.p, Q) > 1E-3)) fresh.push({ p: Q, from: P, source: n });
+      });
+      if (fresh.length === 0) { idle++; continue; }
+      idle = 0;
+      beginOps();
+      const first = fresh[0];
+      const label = "X_{" + found.length + "}";
+      record(label + " = m_{" + (j2 + 1) + "}\\, X_{" + first.source + "}\\, m_{" + (j2 + 1) + "}");
+      if (fresh.length > 1) record("\\dots\\quad \\text{the same for the other points of the orbit so far}");
+      record("\\text{" + fresh.length + " new point" + (fresh.length > 1 ? "s" : "") + ", " + (found.length + fresh.length) + " in all}");
+      const points = fresh.map((f, n) => ({ p: f.p, label: "X" + (found.length + n), from: f.from }));
+      fresh.forEach(f => found.push(f.p));
+      steps.push({
+        title: "Reflect the " + (found.length - fresh.length) + " point" + (found.length - fresh.length > 1 ? "s" : "") + " in m" + SUB[j2],
+        ops: endOps(),
+        mirror: j2, new: points.map(q => q.p), points
+      });
+    }
+
+    // The edge length: the smallest distance between orbit points.
+    let e2 = Infinity;
+    found.forEach((P, a) => found.slice(a + 1).forEach(Q => { e2 = Math.min(e2, dist2(P, Q)); }));
+    return { steps, planes, e2, orbit: found.length, Su: !(O + (-0.5)*ni) };
+  };
+
+  // ---------------------------------------------------------------------------
+  // Rendering
+  // ---------------------------------------------------------------------------
+
+  const solidInput = document.getElementById("solid");
+  const stepInput = document.getElementById("step");
+  const stepValue = document.getElementById("stepValue");
+  const showEdgesInput = document.getElementById("showEdges");
+  const showSphereInput = document.getElementById("showSphere");
+  const showLabelsInput = document.getElementById("showLabels");
+
+  let construction;
+  const load = () => {
+    construction = construct(solidInput.value);
+    stepInput.max = String(construction.steps.length - 1);
+    stepInput.value = stepInput.max;
+    showLabelsInput.checked = construction.orbit <= 12;
+  };
+  load();
+
+  const subscriptDigits = "₀₁₂₃₄₅₆₇₈₉";
+  const subscript = text => text.replace(/([A-Z])(\d+)/g,
+    (m, name, digits) => name + digits.split("").map(d => subscriptDigits[Number(d)]).join(""));
+
+  // Typeset LaTeX with KaTeX; without it, show the LaTeX source.
+  const renderTex = (src, el) => {
+    if (window.katex) {
+      try {
+        window.katex.render(src, el, { throwOnError: false });
+        return;
+      } catch (e) {
+        console.warn("KaTeX could not render:", e);
+      }
+    }
+    el.textContent = src;
+    el.classList.add("tex-fallback");
+  };
+  document.querySelectorAll("#ops .tex").forEach(el => renderTex(el.textContent, el));
+
+  const opsSteps = document.getElementById("opsSteps");
+  const renderOps = current => {
+    opsSteps.textContent = "";
+    let currentElement = null;
+    for (let i = 0; i <= current; i++) {
+      const s = construction.steps[i];
+      const div = document.createElement("div");
+      div.className = i === current ? "step current" : "step";
+      const h = document.createElement("h4");
+      h.textContent = "Step " + i + ": " + s.title;
+      const lines = document.createElement("div");
+      lines.className = "ops-lines";
+      s.ops.forEach(op => {
+        const line = document.createElement("div");
+        renderTex(op, line);
+        lines.appendChild(line);
+      });
+      div.appendChild(h);
+      div.appendChild(lines);
+      opsSteps.appendChild(div);
+      if (i === current) currentElement = div;
+    }
+    if (currentElement && currentElement.scrollIntoView) currentElement.scrollIntoView({ block: "nearest" });
+  };
+
+  // Mirror colours: pale for all, strong for the current step's mirror.
+  const PALE = [0xE0F0D0D0, 0xE0D0F0D0, 0xE0D0D0F0];
+  const STRONG = [0xE0F08080, 0xE080F080, 0xE08080F0];
+
+  // The scene, rebuilt from the controls whenever ganja redraws. It refills
+  // one persistent list: ganja attaches its HTML label elements to that list,
+  // so a new list each frame would create new label elements every frame.
+  const sceneList = [];
+  const scene = () => {
+    const step = Number(stepInput.value);
+    const current = construction.steps[step];
+    const out = sceneList;
+    out.length = 0;
+    const points = [];
+    for (let i = 0; i <= step; i++) construction.steps[i].points.forEach(q => points.push({ ...q, isNew: i === step && i > 0 }));
+
+    // Edges: the orbit points at the edge length from each other.
+    if (showEdgesInput.checked) {
+      const edges = [];
+      points.forEach((P, a) => points.slice(a + 1).forEach(Q => {
+        if (Math.abs(dist2(P.p, Q.p) - construction.e2) < 1E-3 * construction.e2) edges.push([P.p, Q.p]);
+      }));
+      if (edges.length) out.push(0x2277DD, ...edges);
+    }
+
+    // The reflections of this step: each new point and the point it came from.
+    const links = points.filter(q => q.isNew).map(q => [q.from, q.p]);
+    if (links.length) out.push(0xE07000, ...links);
+
+    points.forEach(q => {
+      out.push(q.isNew ? 0xE07000 : 0x333333, q.p);
+      if (showLabelsInput.checked) out.push(subscript(q.label));
+    });
+    out.push(0x333333, point3(0, 0, 0), "O");
+
+    // Transparent objects last: the mirrors, then the unit sphere.
+    construction.planes.forEach((P, n) => out.push(current.mirror === n ? STRONG[n] : PALE[n], P));
+    if (showSphereInput.checked) out.push(0xE0A0C0F0, construction.Su);
+    return out;
+  };
+
+  const view = document.getElementById("view");
+  const placeView = () => {
+    view.style.top = document.getElementById("controls").offsetHeight + "px";
+    document.getElementById("ops").style.top = view.style.top;
+  };
+  placeView();
+
+  const graphOptions = { conformal: true, gl: true, grid: false, htmlText: true, h: 0.5, p: -0.4, z: 5 };
+  const canvas = this.graph(scene, graphOptions);
+  view.appendChild(canvas);
+
+  // ganja keeps one HTML label element per scene position and never removes
+  // them; clear them all before a redraw so labels of another step vanish.
+  const clearHtmlLabels = () => {
+    for (let i = 0; i < 4000; i++) {
+      [sceneList["_" + i], canvas["_" + i]].forEach(div => {
+        if (div) { div.innerHTML = ""; div.last = undefined; }
+      });
+    }
+  };
+
+  // − and + beside the slider: one step back or forward, stopping at the ends.
+  const stepDownButton = document.getElementById("stepDown");
+  const stepUpButton = document.getElementById("stepUp");
+  const stepBy = d => {
+    stepInput.value = String(Math.min(Number(stepInput.max), Math.max(0, Number(stepInput.value) + d)));
+    redraw();
+  };
+  stepDownButton.addEventListener("click", () => stepBy(-1));
+  stepUpButton.addEventListener("click", () => stepBy(1));
+
+  const redraw = () => {
+    clearHtmlLabels();
+    stepValue.textContent = stepInput.value;
+    stepDownButton.disabled = Number(stepInput.value) <= 0;
+    stepUpButton.disabled = Number(stepInput.value) >= Number(stepInput.max);
+    renderOps(Number(stepInput.value));
+    canvas.update(scene);
+  };
+  [stepInput, showEdgesInput, showSphereInput, showLabelsInput].forEach(el => {
+    el.addEventListener("input", redraw);
+    el.addEventListener("change", redraw);
+  });
+  solidInput.addEventListener("change", () => { load(); redraw(); });
+  window.addEventListener("resize", () => { placeView(); canvas.update(scene); });
+  redraw();
+});
+</SCRIPT>
+</BODY>

@@ -659,23 +659,23 @@
   </p>
   <div class="table-wrap">
     <table>
-      <thead><tr><th>Method</th><th>Construction</th><th>Picks a given h?</th></tr></thead>
+      <thead><tr><th>Lift</th><th>Construction</th><th>Picks a given h?</th></tr></thead>
       <tbody>
         <tr>
-          <td>1. Stand a length up</td>
+          <td>A. Stand a length up</td>
           <td>Vertical line <span class="m">L^{\uparrow}_C = C\wedge\Pi_0^{*}\wedge n_\infty</span>;
             <span class="m">C' = \operatorname{split}\big(L^{\uparrow}_C \vee S_C(\lvert P_1P_2\rvert)\big)</span>, higher point.</td>
           <td>Yes, directly</td>
         </tr>
         <tr>
-          <td>2. Trilateration</td>
+          <td>B. Trilateration</td>
           <td>Three spheres centred in <span class="m">\Pi_0</span> meet in a pair mirror-symmetric in
             <span class="m">\Pi_0</span>: <span class="m">T = S_A\vee S_B\vee S_C</span>. Its line
             <span class="m">T\wedge n_\infty</span> is vertical.</td>
           <td>No, h is a by-product</td>
         </tr>
         <tr>
-          <td>3. Reflection</td>
+          <td>C. Reflection</td>
           <td><span class="m">(C - Q)\,X\,(C - Q)</span> moves a lifted point <span class="m">X</span> above
             <span class="m">Q</span> to the same height above <span class="m">C</span>.</td>
           <td>No, it reuses a height</td>
@@ -684,7 +684,7 @@
     </table>
   </div>
   <p>
-    A variant of method 1 fits a fixed sphere size: the vertical through <span class="m">Q</span> meets the
+    A variant of lift A fits a fixed sphere size: the vertical through <span class="m">Q</span> meets the
     sphere of radius <span class="m">\rho</span> at <span class="m">C</span> at height
     <span class="m">\sqrt{\rho^2 - \lvert CQ\rvert^2}</span>, which is Pythagoras done by a single meet.
   </p>
@@ -697,7 +697,7 @@
   <p>
     So the sphere of radius <span class="m">\lvert Q'V_0\rvert</span> centred at <span class="m">Q'</span> lifted
     by <span class="m">\lvert OV_0\rvert</span> cuts <span class="m">\Pi_0</span> in exactly the Carlyle circle.
-    Both lengths are already in the plane, so the lift is method 1. The rest carries over from 2D:
+    Both lengths are already in the plane, so lift A applies. The rest carries over from 2D:
     <span class="m">S_A(B)\vee S_B(A)</span> is a circle <span class="m">K</span> whose carrier plane
     <span class="m">\beta = K\wedge n_\infty</span> is the bisector plane, so <span class="m">\beta\vee\Pi_0</span> is the
     bisector and <span class="m">\operatorname{pt}(L_{AB}\vee\beta)</span> the midpoint; circles meet in the plane as
@@ -718,25 +718,32 @@
 
 <section class="col" id="solids">
   <h2><span class="no">5</span>Platonic solids</h2>
-  <p>Each 2D tool has a 3D counterpart, which gives three routes to the vertices of a solid:</p>
+  <p>Each 2D operation or object has a 3D counterpart, which gives three methods for the vertices of a solid:</p>
   <ul>
-    <li><b><a class="cite" href="#ref-euclid">Euclid XIII</a> with method 1.</b> Plane constructions plus lengths stood up on perpendiculars.</li>
-    <li><b>Trilateration stepping</b>, the 3D compass stepping: a vertex adjacent to known <span class="m">A</span>
+    <li><b>Method 1: <a class="cite" href="#ref-euclid">Euclid XIII</a> with lift A.</b> Plane constructions plus lengths stood up on perpendiculars.</li>
+    <li><b>Method 2: trilateration stepping</b>, the 3D compass stepping: a vertex adjacent to known <span class="m">A</span>
       and <span class="m">B</span> is <span class="m">\operatorname{split}\big(S_u\vee S_A(e)\vee S_B(e)\big)</span>,
       for edge length <span class="m">e</span> (relative to the circumradius: tetrahedron <span class="m">\sqrt{8/3}</span>,
       octahedron <span class="m">\sqrt2</span>, cube <span class="m">2/\sqrt3</span>, icosahedron
-      <span class="m">4/\sqrt{10+2\sqrt5}</span>, dodecahedron <span class="m">4/\big(\sqrt3(1+\sqrt5)\big)</span>).</li>
-    <li><b>Reflection groups</b>, the 3D rotor stepping: the vertices are the orbit of a seed point under
-      <span class="m">A_3</span>, <span class="m">B_3</span> or <span class="m">H_3</span>, with each mirror plane through
-      <span class="m">O</span> a vector, as <span class="m">V_0 - V_1</span> already is (on <span class="m">H_3</span> in Clifford
-      algebra, see <a class="cite" href="#ref-dechant">Dechant 2014</a>).</li>
+      <span class="m">4/\sqrt{10+2\sqrt5}</span>, dodecahedron <span class="m">4/\big(\sqrt3(1+\sqrt5)\big)</span>).
+      Here <span class="m">S_u</span> is the unit circumsphere centred at <span class="m">O</span>, <span class="m">A</span> and
+      <span class="m">B</span> are two vertices already found that share an edge, and the three spheres meet in a point pair
+      whose two points are mirror images in the plane <span class="m">OAB</span>. A rule picks the new vertex from the
+      two, for example the one not already found (<a href="#figure-7">Figure 7</a>).</li>
+    <li><b>Method 3: reflection groups</b>, the 3D rotor stepping: the vertices are the orbit of a seed point under
+      a finite reflection group (Coxeter group) of 3D space: <span class="m">A_3</span>, the full symmetries of the
+      tetrahedron (order 24); <span class="m">B_3</span>, those of the cube and octahedron (order 48); or
+      <span class="m">H_3</span>, those of the icosahedron and dodecahedron (order 120). Each has its mirror planes through
+      <span class="m">O</span>, each plane given by a vector, as <span class="m">V_0 - V_1</span> already is (on <span class="m">H_3</span> in Clifford
+      algebra, see <a class="cite" href="#ref-dechant">Dechant 2014</a>; <a href="#figure-8">Figure 8</a>).</li>
   </ul>
-  <h3>All five by route 1</h3>
+  <h3>All five by method 1</h3>
   <p>
     Every vertex comes from the same stand-up: a line through a point <span class="m">C</span> meets a sphere centred at
     <span class="m">C</span>, and the point pair gives both signs, so one meet yields two vertices. The lengths stood up are
     <span class="m">\lvert OV_0\rvert = 1</span> and, for the icosahedron and dodecahedron, <span class="m">\lvert OH'\rvert = \varphi</span>
-    and <span class="m">\lvert OH\rvert = 1/\varphi</span>: the pentagon construction's Carlyle roots are
+    and <span class="m">\lvert OH\rvert = 1/\varphi</span>, where <span class="m">\varphi = (1+\sqrt5)/2 \approx 1.618</span>
+    is the golden ratio (so <span class="m">1/\varphi = \varphi - 1</span>): the pentagon construction's Carlyle roots are
     <span class="m">H = 1/\varphi</span> and <span class="m">H' = -\varphi</span>. In the floor coordinates
     <span class="m">(u, v, h)</span>, before scaling:
   </p>
@@ -788,6 +795,26 @@
   </figcaption>
 </figure>
 
+<figure class="demo wide" id="figure-7" aria-label="Live demo: solids by trilateration stepping">
+  <div class="frame"><button type="button" class="close" hidden>Close</button><iframe src="trilateration.html" title="Platonic solids by trilateration stepping in CGA3D" loading="lazy"></iframe></div>
+  <figcaption>
+    <span><b>Figure 7.</b> Demo · CGA3D. Trilateration stepping for the tetrahedron and octahedron. Each step meets the unit sphere
+      <span class="m">S_u</span> with the edge-length spheres around two known vertices; the point pair holds the next vertex or vertices.
+      Choose the solid and step through. Drag to rotate, scroll to zoom (needs WebGL).</span>
+    <span class="actions"><button type="button" class="expand">Full screen</button> <a href="trilateration.html">Open page</a></span>
+  </figcaption>
+</figure>
+
+<figure class="demo wide" id="figure-8" aria-label="Live demo: solids as orbits of a reflection group">
+  <div class="frame"><button type="button" class="close" hidden>Close</button><iframe src="reflections.html" title="Platonic solids as orbits of reflection groups in CGA3D" loading="lazy"></iframe></div>
+  <figcaption>
+    <span><b>Figure 8.</b> Demo · CGA3D. Method 3: the three mirror planes of <span class="m">A_3</span>, <span class="m">B_3</span> or
+      <span class="m">H_3</span> and a seed point where two of them meet. Each step reflects the points found so far in one mirror,
+      <span class="m">X' = m\,X\,m</span>, until the orbit is the solid. Drag to rotate, scroll to zoom (needs WebGL).</span>
+    <span class="actions"><button type="button" class="expand">Full screen</button> <a href="reflections.html">Open page</a></span>
+  </figcaption>
+</figure>
+
 <section class="col" id="theory">
   <h2><span class="no">6</span>What can be constructed</h2>
   <h3>Why 3D adds nothing new</h3>
@@ -825,22 +852,27 @@
       </tbody>
     </table>
   </div>
-  <blockquote class="quote">
-    <p>The rotations of T, O and I only involve √2, √3 and √5. From that it follows that the orbit of a constructible point under T, O or I is always constructible, and under Cₙ or Dₙ exactly when the n-gon is. I'm not aware of a named theorem stating this, but it follows directly from the field argument above.</p>
-  </blockquote>
   <p>Some consequences:</p>
   <ul>
     <li><b>All five Platonic solids are constructible</b> (Euclid, Book XIII). Their coordinates need only
-      <span class="m">\sqrt2</span>, <span class="m">\sqrt3</span> and <span class="m">\sqrt5</span>.</li>
+      <span class="m">\sqrt2</span>, <span class="m">\sqrt3</span> and <span class="m">\sqrt5</span>
+      (coordinates: <a class="cite" href="#ref-platonic">Wikipedia: Platonic solid</a>).</li>
     <li><b>All Archimedean solids are constructible except the snub cube and the snub dodecahedron.</b> The snub cube's
-      vertices are the even permutations of <span class="m">(\pm1, \pm1/t, \pm t)</span> with an odd number of minus signs,
+      vertices are the even permutations of <span class="m">(\pm1, \pm1/t, \pm t)</span> with an even number of plus signs,
+      together with the odd permutations with an odd number of plus signs
+      (<a class="cite" href="#ref-snubcube">Wikipedia: Snub cube</a>),
       where <span class="m">t\approx 1.839</span> is the tribonacci constant, a root of the irreducible cubic
       <span class="m">t^3 - t^2 - t - 1 = 0</span>. Since <span class="m">t</span> is a ratio of lengths, no scaling helps.
-      The snub dodecahedron needs a root of a cubic over <span class="m">\mathbb{Q}(\sqrt5)</span>.</li>
-    <li><b>Some Johnson solids fail the same way</b>; the snub disphenoid's coordinates satisfy an irreducible cubic.</li>
+      The snub dodecahedron needs <span class="m">\xi\approx 0.943</span>, the real root of the cubic
+      <span class="m">x^3 + 2x^2 - \varphi^2</span> over <span class="m">\mathbb{Q}(\sqrt5)</span>
+      (<a class="cite" href="#ref-snubdodec">Wikipedia: Snub dodecahedron</a>).</li>
+    <li><b>Some Johnson solids are not constructible either.</b> (The Johnson solids are the convex polyhedra with regular
+      faces that are neither Platonic nor Archimedean, nor prisms or antiprisms.) The snub disphenoid's coordinates involve the positive root of the
+      irreducible cubic <span class="m">2x^3 + 11x^2 + 4x - 1</span>, so it cannot be built (<a class="cite" href="#ref-snubdisph">Wikipedia: Snub disphenoid</a>).</li>
   </ul>
   <p>
-    Adding one non-quadratic tool (angle trisection, neusis, a conic, origami folds) changes the answer. Gleason
+    Adding one non-quadratic tool (angle trisection, neusis, a conic, origami folds) changes the answer; a point reachable with a conic-drawing tool
+    is called a solid construction (<a class="cite" href="#ref-solidcons">Wikipedia: Straightedge and compass construction</a>). Gleason
     (<a class="cite" href="#ref-gleason">1988</a>) showed that with an angle trisector the
     <span class="m">n</span>-gon is constructible exactly when <span class="m">n = 2^r 3^s p_1\cdots p_m</span> with distinct
     Pierpont primes <span class="m">p_i = 2^u 3^v + 1 &gt; 3</span> (7, 13, 19, 37, 73, …). That brings in the 7-gon and the
@@ -888,7 +920,8 @@
     tower and mirrors it, since <span class="m">2\cos\frac{\pi}{n} = -2\cos\frac{(n-1)\pi}{n}</span>. With one conic,
     compass and straightedge reach towers of square and cube roots, and so the same regular polygons as with an angle
     trisector (<a class="cite" href="#ref-gleason">Gleason, 1988</a>): <span class="m">n = 2^r 3^s p_1\cdots p_k</span> for
-    distinct Pierpont primes <span class="m">p_i = 2^u 3^v + 1</span>. The 11-gon is out of reach, because
+    distinct Pierpont primes <span class="m">p_i = 2^u 3^v + 1</span>
+    (see also <a class="cite" href="#ref-solidcons">Wikipedia: Straightedge and compass construction</a>, section Solid constructions). The 11-gon is out of reach, because
     <span class="m">2\cos\frac{2\pi}{11}</span> needs a quintic and a circle meets a conic in at most four points.
   </p>
 
@@ -951,10 +984,10 @@
   </dl>
 </aside>
 
-<figure class="demo wide" id="figure-7" aria-label="Live demo: regular polygons with a parabola in GAC">
+<figure class="demo wide" id="figure-9" aria-label="Live demo: regular polygons with a parabola in GAC">
   <div class="frame"><button type="button" class="close" hidden>Close</button><iframe src="gac-polygons.html#n7" title="Regular polygons with a parabola in GAC" loading="lazy"></iframe></div>
   <figcaption>
-    <span><b>Figure 7.</b> Demo · GAC <span class="m">\mathbb{R}^{5,3}</span> with CGA2D inside it. Opens on the 7-gon; choose the 9-, 13- or
+    <span><b>Figure 9.</b> Demo · GAC <span class="m">\mathbb{R}^{5,3}</span> with CGA2D inside it. Opens on the 7-gon; choose the 9-, 13- or
       19-gon, or by mirroring the 14-, 18-, 26- or 38-gon. Zoom out for the larger circles.</span>
     <span class="actions"><button type="button" class="expand">Full screen</button> <a href="gac-polygons.html#n7">Open page</a></span>
   </figcaption>
@@ -986,7 +1019,21 @@
       <a href="https://doi.org/10.1007/s00006-018-0879-2">doi:10.1007/s00006-018-0879-2</a>.</li>
     <li id="ref-dechant">Pierre-Philippe Dechant, “A Clifford Algebraic Framework for Coxeter Group Theoretic
       Computations,” <i>Advances in Applied Clifford Algebras</i> 24 (2014), 89–108.
-      <a href="https://doi.org/10.1007/s00006-013-0422-4">doi:10.1007/s00006-013-0422-4</a>.</li>
+      <a href="https://doi.org/10.1007/s00006-013-0422-4">doi:10.1007/s00006-013-0422-4</a>,
+      <a href="https://www.researchgate.net/publication/229430339_A_Clifford_Algebraic_Framework_for_Coxeter_Group_Theoretic_Computations">PDF</a>.</li>
+    <li id="ref-platonic">“Platonic solid,” <i>Wikipedia</i>, sections Cartesian coordinates and Euclid (accessed 10 November 2026).
+      <a href="https://en.wikipedia.org/wiki/Platonic_solid">en.wikipedia.org/wiki/Platonic_solid</a>.</li>
+    <li id="ref-snubcube">“Snub cube,” <i>Wikipedia</i>, section Cartesian coordinates (accessed 10 November 2026).
+      <a href="https://en.wikipedia.org/wiki/Snub_cube">en.wikipedia.org/wiki/Snub_cube</a>.</li>
+    <li id="ref-snubdodec">“Snub dodecahedron,” <i>Wikipedia</i>, section Cartesian coordinates (accessed 10 November 2026).
+      <a href="https://en.wikipedia.org/wiki/Snub_dodecahedron">en.wikipedia.org/wiki/Snub_dodecahedron</a>.</li>
+    <li id="ref-snubdisph">“Snub disphenoid,” <i>Wikipedia</i>, section Cartesian coordinates (accessed 10 November 2026).
+      <a href="https://en.wikipedia.org/wiki/Snub_disphenoid">en.wikipedia.org/wiki/Snub_disphenoid</a>.
+      It cites Hartshorne, <i>Geometry: Euclid and Beyond</i> (Springer, 2000), p. 457, for the solid not being
+      compass-and-straightedge constructible.</li>
+    <li id="ref-solidcons">“Straightedge and compass construction,” <i>Wikipedia</i>, section Solid constructions
+      (accessed 10 November 2026).
+      <a href="https://en.wikipedia.org/wiki/Straightedge_and_compass_construction#Solid_constructions">en.wikipedia.org/wiki/Straightedge_and_compass_construction</a>.</li>
     <li id="ref-ganja">Steven De Keninck, <i>ganja.js</i>, a geometric algebra library for JavaScript, used for every figure
       on this page. <a href="https://github.com/enkimute/ganja.js">github.com/enkimute/ganja.js</a>.</li>
   </ol>
@@ -1003,8 +1050,8 @@
 
 <footer class="col">
   The demos are the pages <a href="polygons.html">polygons</a>, <a href="gac-polygons.html">gac-polygons</a>,
-  <a href="gac-operations.html">gac-operations</a>, <a href="pentagon-lift.html">pentagon-lift</a> and
-  <a href="platonic-solids.html">platonic-solids</a>; the source is at
+  <a href="gac-operations.html">gac-operations</a>, <a href="pentagon-lift.html">pentagon-lift</a>,
+  <a href="platonic-solids.html">platonic-solids</a>, <a href="trilateration.html">trilateration</a> and <a href="reflections.html">reflections</a>; the source is at
   <a href="https://github.com/icaven/cga-constructions">github.com/icaven/cga-constructions</a>. The 3D demos need WebGL.
   Each demo's operations panel is recorded by the construction helpers as they run, so it always matches what was computed.
   Every figure is drawn with <a class="cite" href="#ref-ganja">ganja.js</a>.

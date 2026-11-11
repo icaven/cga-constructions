@@ -257,6 +257,13 @@ CircleDivision.cga2d = () => {
     return named(X, n);
   };
 
+  // The point of a pair that is not P (the pair is P and one other point).
+  const otherThan = (points, P, n) => {
+    const X = points.reduce((a, b) => -(b | P)[0] > -(a | P)[0] ? b : a);
+    if (n) record(tex(n) + " = " + nameOf(X) + "\\qquad \\text{the point that is not } " + nameOf(P));
+    return named(X, n);
+  };
+
   // The mirror image of X in the line through A and B, by compass.
   //
   //   1. circles centred at A and at B, both through X;
@@ -353,7 +360,7 @@ CircleDivision.cga2d = () => {
     const xAxis = lineThrough(O, V0, "L_x");
     const unit = circleCenterThrough(O, V0, "C_u");
     const Qmeet = intersect(xAxis, unit);
-    const Q = choose(Qmeet.points, "smaller x", "Q");
+    const Q = otherThan(Qmeet.points, V0, "Q");
 
     steps.push({
       title: "Given O and V0: the x-axis and unit circle meet again at Q",
@@ -541,5 +548,5 @@ CircleDivision.cga2d = () => {
     };
   };
 
-  return { ni, no, point, normalize, trace, tex, nameOf, named, record, beginOps, endOps, quietly, given, lineEnds, lineThrough, circleCenterRadius, circleCenterThrough, centerOf, flatPointToPoint, splitPointPair, meet, intersect, linePairs, lineThroughPair, pointOfLines, bisect, xOf, yOf, choose, fartherFrom, mirror, rotorBetween, rotate, carlyleRoots, frame, polygonFromCosine, regularPolygonConstruction };
+  return { ni, no, point, normalize, trace, tex, nameOf, named, record, beginOps, endOps, quietly, given, lineEnds, lineThrough, circleCenterRadius, circleCenterThrough, centerOf, flatPointToPoint, splitPointPair, meet, intersect, linePairs, lineThroughPair, pointOfLines, bisect, xOf, yOf, choose, fartherFrom, otherThan, mirror, rotorBetween, rotate, carlyleRoots, frame, polygonFromCosine, regularPolygonConstruction };
 };

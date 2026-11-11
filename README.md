@@ -16,6 +16,8 @@ theory behind them.
 | [`gac-operations.html`](gac-operations.html) | GAC examples: conics through five points, rotors, reflections and translators acting on conics |
 | [`pentagon-lift.html`](pentagon-lift.html) | CGA3D: the 5-gon, with the Carlyle circle cut from a lifted sphere |
 | [`platonic-solids.html`](platonic-solids.html) | CGA3D: the five Platonic solids from stood-up lengths |
+| [`trilateration.html`](trilateration.html) | CGA3D: the tetrahedron and octahedron by trilateration stepping, three spheres at a time |
+| [`reflections.html`](reflections.html) | CGA3D: the five Platonic solids as orbits of a seed point under the reflection groups A₃, B₃ and H₃ |
 
 Each demo lists the CGA (or GAC) operations it runs, step by step. The polygon pages share the modules in
 [`circle_division/`](circle_division): the constructions, the towers, the GAC algebra and the viewer. The pages load ganja.js 1.0.204 and KaTeX 0.16.11

@@ -32,7 +32,7 @@ window.CircleDivision = window.CircleDivision || {};
 
 CircleDivision.cubicTowers = () => (K, G) => {
   const { point, normalize, record, named, nameOf, beginOps, endOps, given, bisect,
-          circleCenterRadius, circleCenterThrough, intersect, choose, fartherFrom, lineThrough,
+          circleCenterRadius, circleCenterThrough, intersect, choose, fartherFrom, otherThan, lineThrough,
           pointOfLines, mirror, carlyleRoots, xOf, yOf } = K;
   const N = CircleDivision.numeric;
   const curveColor = CircleDivision.colors.curve;
@@ -177,7 +177,7 @@ CircleDivision.cubicTowers = () => (K, G) => {
     if (spec.mirror) {
       const around = circleCenterThrough(O, foot);
       const back = intersect(xAxis, around, "T_{H_0}");
-      H = choose(back.points, "larger x", "H");
+      H = otherThan(back.points, foot, "H");
       record("\\text{equivalently } H = L_y^{*}\\, H_0\\, L_y^{*} \\qquad \\text{reflection in the y-axis}");
       circles.push(around);
       pairs.push(back.pair);
