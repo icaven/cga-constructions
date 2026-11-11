@@ -1,6 +1,6 @@
 # Compass constructions in conformal geometric algebra
 
-Ian Cavén, with Claude Opus 5.5 · 2026-11-07, updated 2026-11-08
+Ian Cavén, with Claude Opus 5.5 · 2026-11-07, updated 2026-11-10
 
 **Site:** https://icaven.github.io/cga-constructions/
 
